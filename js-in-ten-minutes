@@ -214,13 +214,13 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__+hts4YwAuF3J1uqk0NLZgitsljXQzO0PIcBbuS5QPf8');
+meta::data('document', <<'__3P4ZvPxF5B9JkzbPzbWDq8V4gMdpvghzeJ6E7CWj3d8');
 = JavaScript in Ten Programmer Minutes
 a Spencer Tipping
 begin
 
 - Types
-  JavaScript has eight types. They are:
+  JavaScript has nine types. They are:
 
   e[
     + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.
@@ -233,6 +233,10 @@ begin
     + Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. always boxed. Instance of \verb|RegExp|.
     + Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
   ]e
+
+  The value \verb|null| is actually almost never produced by JavaScript. The only case you're likely to run across \verb|null| is if you assign it somewhere (most of the time you'll get
+  \verb|undefined| instead -- one notable exception is \verb|document.getElementById|, which returns \verb|null| if it can't find an element). Making sparing use of \verb|undefined| and
+  instead using \verb|null| can make bugs much easier to track down.
 
 - Functions
   Functions are first-class lexical closures.\footnote{Note that block scoping isn't used -- the only scopes that get introduced are at function boundaries.} They behave pretty much like
@@ -249,7 +253,9 @@ begin
 
     ::
     var f = function () {return arguments[0] + arguments[1]};
-    f ('foo')       // => 'fooundefined'
+    var g = function () {return arguments.length};
+    f ('foo')                   // => 'fooundefined'
+    g (null, false, undefined)  // => 3
     :.
 
     {\em The \verb|arguments| keyword is not an array!} It just looks like one. In particular, doing any of these will cause problems:
@@ -328,12 +334,68 @@ begin
     \verb|apply| the arguments are expected in an array-like thing (\verb|arguments| works here), and in the case of \verb|call| they're passed in as given.
 
 - Gotchas
+  - {\tt var}
+    Be careful how you define a variable. If you leave off the {\tt var} keyword, your variable will be defined in the global scope, which can cause some very subtle bugs:
+
+    ::
+    var f = function () {         // f is toplevel, so global
+      var x = 5;                  // x is local to f
+      y = 6;                      // y is global
+    };
+    :.
+
+    As far as I know, the same is true in both types of \verb|for| loop:
+
+    ::
+    for (i = 0; i < 10; ++i)      // i is global
+    for (var i = 0; i < 10; ++i)  // i is local to the function
+    for (k in some_object)        // k is global
+    for (var k in some_object)    // k is local to the function
+    :.
+
+  - Lazy scoping and mutability
+    This is a beautiful disaster. Check this out:
+
+    ::
+    var fs = [];
+    for (var i = 0; i < 3; ++i)
+      fs.push (function () {return i});
+    var xs = [];
+    for (var j = 0; j < 3; ++j)
+      xs.push (fs[j]());
+    xs          // what will this be?
+    :.
+
+    A reasonable conclusion is that \verb|xs| is \verb|[0, 1, 2]|, since those were the values of \verb|i| when the functions were created. However, because of lazy scoping, \verb|xs| will in
+    fact have the value \verb|[3, 3, 3]|. The reason for this is that at the time of invocation, each function will see the current value of \verb|i|, which is 3. (Interestingly, rewriting the
+    second \verb|for| loop to use \verb|i| rather than \verb|j| will produce the expected output!)
+
+    The simplest way around this is to introduce a layer of scope for each iteration:
+
+    ::
+    for (var i = 0; i < 3; ++i)
+      (function (x) {fs.push (function () {return x})}) (i);
+    :.
+
+    The inner \verb|x| will be preserved by the reference from the function that gets pushed onto the array, and because it is in a separate scope its value will be invariant with future
+    changes to the outer \verb|i|. (Basically, we're forcing \verb|i| to be evaluated immediately, since it's now a function parameter.) Note, however, that the following code still won't
+    work:
+
+    ::
+    for (var i = 0; i < 3; ++i) {
+      var x = i;
+      fs.push (function () {return x});
+    }
+    :.
+
+    \noindent because \verb|x| will be scoped to the nearest enclosing function; so its value will change just as frequently as the value of \verb|i|.
+
   - Equality
     Because the \verb|==| is lame, these are all true in JavaScript:
 
     ::
     null  == undefined
-    false == 0
+    null  == 0
     false == ''
     ''    == 0
     true  == 1
@@ -365,7 +427,7 @@ begin
       + Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
     ]e
 
-    All objects created by the browser, whether or not they're somehow native, will be boxed.
+    All HTML objects, whether or not they're somehow native, will be boxed.
 
   - Things that will silently fail or misbehave
     JavaScript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
@@ -453,6 +515,7 @@ begin
     Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.
 
 - Prototypes
+  \label{sec:prototypes}
   Are overrated. Prototype-based OOP is almost as miserable as most other forms of OOP, and I never use it. But sometimes you need to do things with prototypes, so here's the basic idea.
 
   Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
@@ -577,7 +640,7 @@ begin
 
   As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
   terse and algorithmic. jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
-__+hts4YwAuF3J1uqk0NLZgitsljXQzO0PIcBbuS5QPf8
+__3P4ZvPxF5B9JkzbPzbWDq8V4gMdpvghzeJ6E7CWj3d8
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -656,9 +719,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__Rfxhv64VGx0KboNoB4+9zRhsEJyE4kl/wq2yjeHXxNE');
-/tmp/js-in-ten-minutes.04ggp7N7bUPvLgc99DiAITNzlxk3QbNYkEYXd+HkCOM/document.pdf
-__Rfxhv64VGx0KboNoB4+9zRhsEJyE4kl/wq2yjeHXxNE
+meta::data('pdf-output-file', <<'__Ef60KO3w794cxGlScUl8CXELS1Z+ESp2Rsj52+eMQdM');
+/tmp/js-in-ten-minutes.cIYjyk1LLucbi+r72Wf36mnMFz4G6WSHEsmca8fBwlU/document.pdf
+__Ef60KO3w794cxGlScUl8CXELS1Z+ESp2Rsj52+eMQdM
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
