@@ -214,26 +214,121 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__aULFLGpb90CVPJ6Ut9dsGURBR+d0MS1DCGV44k004wo');
+meta::data('document', <<'__+hts4YwAuF3J1uqk0NLZgitsljXQzO0PIcBbuS5QPf8');
 = JavaScript in Ten Programmer Minutes
 a Spencer Tipping
 begin
 
-- Core Stuff
-  - Types
-    JavaScript has eight types. They are:
+- Types
+  JavaScript has eight types. They are:
 
+  e[
+    + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.
+    + Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Never boxed.
+    + Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
+    + Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number|.
+    + Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
+    + Arrays -- e.g. \verb|[1, 2, "foo", [3, 4]]|. Always boxed. Instance of \verb|Array|.
+    + Objects -- e.g. \verb|{foo: 'bar', bif: [1, 2]}|, which are really just hashtables. Always boxed. Instance of \verb|Object|.
+    + Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. always boxed. Instance of \verb|RegExp|.
+    + Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
+  ]e
+
+- Functions
+  Functions are first-class lexical closures.\footnote{Note that block scoping isn't used -- the only scopes that get introduced are at function boundaries.} They behave pretty much like
+  you'd expect, but there are several really cool things about functions and one really egregious disaster.
+
+  - Variadic behavior (a cool thing)
+    Functions are always variadic. Formal parameters are bound if they're present; otherwise they're \verb|undefined|. For example:
+
+    ::
+    (function (x, y) {return x + y}) ('foo')        // => 'fooundefined'
+    :.
+
+    The arguments to your function can be accessed in a first-class way, too:
+
+    ::
+    var f = function () {return arguments[0] + arguments[1]};
+    f ('foo')       // => 'fooundefined'
+    :.
+
+    {\em The \verb|arguments| keyword is not an array!} It just looks like one. In particular, doing any of these will cause problems:
+
+    ::
+    arguments.concat ([1, 2, 3])
+    [1, 2, 3].concat (arguments)
+    arguments.push ('foo')
+    arguments.shift ()
+    :.
+
+    To get an array from the \verb|arguments| object, you can say \verb|Array.prototype.slice.call (arguments)|. As far as I know that's the best way to go about it.
+
+  - Lazy scoping (a cool thing)
+    Internally, functions use a lexical scoping chain. However, the variables inside a function body aren't resolved until the function is called. This has some really nice advantages,
+    perhaps foremost among them self-reference:
+
+    ::
+    var f = function () {return f};
+    f () === f              // => true
+    :.
+
+    \noindent\verb|<hacker-stuff>| Another nice thing is that you can create functions that refer to variables that might never exist. (Some people would consider this a non-feature.) This
+    means that JavaScript can be made to support syntactic macros via the \verb|toString| method:
+
+    ::
+    var f = function () {return $0 + $1};
+    var g = eval (f.toString ().replace (/\$(\d+)/g,
+              function (_, digits) {return 'arguments[' + digits + ']'}));
+    g (5, 6)        // => 11
+    :.
+
+    Theoretically by extending this principle one could implement true structural macros, operator overloading, a type system,\footnote{God forbid.} or other things.\verb|</hacker-stuff>|
+
+  - The meaning of {\tt this} (the egregious disaster)
+    One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and JavaScript makes it look nearly impossible. Outside of functions (in
+    the global scope, that is), the word \verb|this| refers to the {\em global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
+    is determined entirely by how the function is called. Here's how that works:
+    
     e[
-      + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.
-      + Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Never boxed.
-      + Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
-      + Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number|.
-      + Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
-      + Arrays -- e.g. \verb|[1, 2, "foo", [3, 4]]|. Always boxed. Instance of \verb|Array|.
-      + Objects -- e.g. \verb|{foo: 'bar', bif: [1, 2]}|, which are really just hashtables. Always boxed. Instance of \verb|Object|.
-      + Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
+      + If the function is called alone, e.g.~\verb|foo(5)|, then inside that function's body the word \verb|this| will be equivalent to the global object.
+      + If the function is called as a method, e.g.~\verb|x.foo(5)|, then inside that function's body the word \verb|this| refers to the object, in this case \verb|x|.
+      + If the function starts off as a method and then is called alone:
+
+        ::
+        var f = x.foo;
+        f (5);
+        :.
+
+        then \verb|this| will be the global object again. Nothing is remembered about where \verb|f| came from; it is all determined right at the invocation site.
+
+      + If the function is invoked using \verb|apply| or \verb|call|, then \verb|this| points to whatever you set it to (unless you try to set it to \verb|null| or \verb|undefined|, in
+        which case it will be the global object again):
+
+        ::
+        var f = function () {return this};
+        f.call (4)          // => 4
+        f.call (0)          // => 0
+        f.call (false)      // => false
+        f.call (null)       // => [object global]
+        :.
     ]e
 
+    Given this unpredictability, most JavaScript libraries provide a facility to set a function's \verb|this| binding (referred to within JavaScript circles as just a function's binding)
+    to something invocation-invariant. The easiest way to do this is to define a function that proxies arguments using \verb|apply| and closes over the proper value (luckily, closure
+    variables behave normally):
+
+    ::
+    var bind = function (f, this_value) {
+      return function () {return f.apply (this_value, arguments)};
+    };
+    :.
+
+    The difference between \verb|call| and \verb|apply| is straightforward: \verb|f.call (x, y, z)| is the same as \verb|f.apply (x, [y, z])|, which is the same as
+    \verb|bind (f, x) (y, z)|. That is, the first argument to both \verb|call| and \verb|apply| becomes \verb|this| inside the function, and the rest are passed through. In the case of
+    \verb|apply| the arguments are expected in an array-like thing (\verb|arguments| works here), and in the case of \verb|call| they're passed in as given.
+
+- Gotchas
+  - Equality
     Because the \verb|==| is lame, these are all true in JavaScript:
 
     ::
@@ -250,162 +345,239 @@ begin
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values (and might
     fudge some of the sometimes-boxed values; I'm not sure about all of the edge cases).
 
-    - Boxed vs.~unboxed
-      Boxed values can store properties. Unboxed values will silently fail to store them; for example:
-
-      ::
-      var x = 5;
-      x.foo = 'bar';
-      x.foo     // => undefined; x is an unboxed number.
-
-      var x = new Number (5);
-      x.foo = 'bar';
-      x.foo     // => 'bar'; x is a pointer.
-      :.
-
-      How does a sometimes-boxed value acquire a box? When you do one of these things:
-
-      e[
-        + Call its constructor directly, as we did above
-        + Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
-      ]e
-
-      All objects created by the browser, whether or not they're somehow native, will be boxed.
-
-    - Things that will silently fail
-      JavaScript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
-
-      ::
-      [1, 2, 3].foo     // => undefined
-      [1, 2, 3][4]      // => undefined
-      1 / 0             // => Infinity
-      0 * 'foo'         // => NaN
-      :.
-
-      This can be very useful. A couple of common idioms are things like these:
-
-      ::
-      e.nodeType || (e = document.getElementById (e));
-      options.foo = options.foo || 5;
-      :.
-
-    - Things that will loudly fail
-      There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
-      exist\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
-      {\tt foo} hasn't been defined (or contains the value {\tt undefined}).}, then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
-
-    - Don't use {\tt typeof}
-      Because it behaves like this:
-
-      ::
-      typeof function () {}     // => 'function'
-      typeof [1, 2, 3]          // => 'object'
-      typeof {}                 // => 'object'
-      typeof null               // => 'object'
-      typeof typeof             // hangs forever in Firefox
-      :.
-
-      {\tt typeof} is a really lame way to detect the type of something. Better is to use an object's \verb|constructor| property, like this:
-
-      ::
-      (function () {}).constructor      // => Function
-      [1, 2, 3].constructor             // => Array
-      ({}).constructor                  // => Object
-      true.constructor                  // => Boolean
-      null.constructor                  // TypeError: null has no properties
-      :.
-
-      In order to defend against \verb|null| and \verb|undefined| (neither of which let you ask for their constructor), you might try to rely on the falsity of these values:
-
-      ::
-      x && x.constructor
-      :.
-
-      But in fact that will fail for \verb|''|, \verb|0|, and \verb|false|. The only way I know to get around this is to just do the comparison:
-
-      ::
-      x === null || x === undefined ? x : x.constructor
-      :.
-
-      Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.
-
-    - Prototypes
-      Are overrated. Prototype-based OOP is almost as miserable as most other forms of OOP, and I never use it. But sometimes you need to do things with prototypes, so here's the basic idea.
-
-      Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
-      mutant instance-generating thing that does something completely different. Here's an example:
-
-      ::
-      // A normal function:
-      var f = function (x) {return x + 1};
-      f (5)     // => 6
-      :.
-
-      This is what most people expect. Here's the mutant behavior that almost nobody expects:
-
-      ::
-      // A constructor function
-      var f = function (x) {this.x = x + 1};
-      var i = new f (5);        // i.x = 6
-      :.
-
-      The following things are true at this point:
-
-      ::
-      i.constructor === f
-      i.__proto__ === i.constructor.prototype   // on Firefox, anyway
-      i instanceof f
-      typeof i === 'object'
-      :.
-
-  - A Really Awesome Equality
-    There is something really important about JavaScript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
-    \verb|foo['bar']|. You could safely make this transformation to your code ahead of time, whether on value-properties, methods, or anything else. By extension, you can assign non-identifier
-    things to object properties:
+  - Boxed vs.~unboxed
+    Boxed values can store properties. Unboxed values will silently fail to store them; for example:
 
     ::
-    var foo = [1, 2, 3];
-    foo['@snorkel!'] = 4;
-    foo['@snorkel!']    // => 4
+    var x = 5;
+    x.foo = 'bar';
+    x.foo     // => undefined; x is an unboxed number.
+
+    var x = new Number (5);
+    x.foo = 'bar';
+    x.foo     // => 'bar'; x is a pointer.
     :.
 
-    You can also read properties this way, of course:
+    How does a sometimes-boxed value acquire a box? When you do one of these things:
+
+    e[
+      + Call its constructor directly, as we did above
+      + Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
+    ]e
+
+    All objects created by the browser, whether or not they're somehow native, will be boxed.
+
+  - Things that will silently fail or misbehave
+    JavaScript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
 
     ::
-    [1, 2, 3]['length']         // => 3
-    [1, 2, 3]['push']           // => [native function]
+    [1, 2, 3].foo     // => undefined
+    [1, 2, 3][4]      // => undefined
+    1 / 0             // => Infinity
+    0 * 'foo'         // => NaN
     :.
 
-    In fact, this is what the \verb|for (var ... in ...)| syntax was built to do: Enumerate the properties of an object (all of them, too -- whether they came from the prototype or were stored
-    directly). So, for example:
+    This can be very useful. A couple of common idioms are things like these:
 
     ::
-    var properties = [];
-    for (var k in document) properties.push (k);
-    properties          // => a boatload of strings
+    e.nodeType || (e = document.getElementById (e));
+    options.foo = options.foo || 5;
     :.
 
-    However, \verb|for ... in| has a dark side. It will do some very weird things when you start modifying prototypes. For example:
+    Also, the language will convert {\em anything} to a string or number if you use \verb|+|. All of these expressions are strings:
 
     ::
-    Object.prototype.foo = 'bar';
-    var properties = [];
-    for (var k in {}) properties.push (k);
-    properties          // => ['foo']
+    null + [1, 2]             // => 'null1,2'
+    undefined + [1, 2]        // => 'undefined1,2'
+    3 + {}                    // => '3[object Object]'
+    '' + true                 // => 'true'
     :.
 
-    To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
-    and second, use \verb|hasOwnProperty|:
+    And all of these are numbers:
 
     ::
-    Object.prototype.foo = 'bar';
-    var properties = [], obj = {};
-    for (var k in obj) obj.hasOwnProperty (k) && properties.push (k);
-    properties          // => []
+    undefined + undefined     // => NaN
+    undefined + null          // => NaN
+    null + null               // => 0
+    {} + {}                   // => NaN
+    true + true               // => 2
+    0 + true                  // => 1
     :.
 
-    In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
-__aULFLGpb90CVPJ6Ut9dsGURBR+d0MS1DCGV44k004wo
+    And some of my favorites:
+
+    ::
+    null * false + (true * false) + (true * true)     // => 1
+    true << true << true                              // => 4
+    true / null                                       // => Infinity
+    :.
+
+  - Things that will loudly fail
+    There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
+    exist\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
+    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).}, then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
+
+  - Don't use {\tt typeof}
+    Because it behaves like this:
+
+    ::
+    typeof function () {}     // => 'function'
+    typeof [1, 2, 3]          // => 'object'
+    typeof {}                 // => 'object'
+    typeof null               // => 'object'
+    typeof typeof             // hangs forever in Firefox
+    :.
+
+    {\tt typeof} is a really lame way to detect the type of something. Better is to use an object's \verb|constructor| property, like this:
+
+    ::
+    (function () {}).constructor      // => Function
+    [1, 2, 3].constructor             // => Array
+    ({}).constructor                  // => Object
+    true.constructor                  // => Boolean
+    null.constructor                  // TypeError: null has no properties
+    :.
+
+    In order to defend against \verb|null| and \verb|undefined| (neither of which let you ask for their constructor), you might try to rely on the falsity of these values:
+
+    ::
+    x && x.constructor
+    :.
+
+    But in fact that will fail for \verb|''|, \verb|0|, and \verb|false|. The only way I know to get around this is to just do the comparison:
+
+    ::
+    x === null || x === undefined ? x : x.constructor
+    :.
+
+    Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.
+
+- Prototypes
+  Are overrated. Prototype-based OOP is almost as miserable as most other forms of OOP, and I never use it. But sometimes you need to do things with prototypes, so here's the basic idea.
+
+  Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
+  mutant instance-generating thing that does something completely different. Here's an example:
+
+  ::
+  // A normal function:
+  var f = function (x) {return x + 1};
+  f (5)     // => 6
+  :.
+
+  This is what most people expect. Here's the mutant behavior that almost nobody expects:
+
+  ::
+  // A constructor function
+  var f = function (x) {this.x = x + 1};    // no return!
+  var i = new f (5);                        // i.x = 6
+  :.
+
+  The following things are true at this point:
+
+  ::
+  i.constructor === f
+  i.__proto__ === i.constructor.prototype   // on Firefox, anyway
+  i instanceof f
+  typeof i === 'object'
+  :.
+
+  The \verb|new| keyword is just a right-associative unary operator, so you can instantiate things first-class:
+
+  ::
+  var x = 5;
+  new x.constructor ();     // Creates a boxed version of x
+  :.
+
+  If you are going to program using this questionable design pattern, then you'll probably want to add methods to things:
+
+  ::
+  var f = function (x) {this.x = x};
+  f.prototype.add_one = function () {++this.x};
+  var i = new f (5);
+  i.add_one ();
+  i.x               // => 7
+  :.
+
+  You can find tons of information about this kind of prototype programming online.
+
+  - Autoboxing
+    You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
+    returns either {\tt true} or {\tt false}.}
+
+    ::
+    Boolean.prototype.xor = function (rhs) {return !! this !== !! rhs};
+    :.
+
+    And, upon running this code, you'd run into this tragically unfortunate property:
+
+    ::
+    false.xor (false)         // => true
+    :.
+
+    The reason is that when you treat an unboxed value as an object (e.g.~invoke one of its methods), it gets temporarily promoted into a boxed value for the purposes of that method call.
+    This doesn't change its value later, but it does mean that it loses whatever falsity it once had. Depending on the type you're working with, you can convert it back to an unboxed value:
+
+    ::
+    function (rhs) {return !! this.valueOf () !== !! rhs};
+    :.
+
+- A Really Awesome Equality
+  There is something really important about JavaScript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
+  \verb|foo['bar']|. You could safely make this transformation to your code ahead of time, whether on value-properties, methods, or anything else. By extension, you can assign non-identifier
+  things to object properties:
+
+  ::
+  var foo = [1, 2, 3];
+  foo['@snorkel!'] = 4;
+  foo['@snorkel!']    // => 4
+  :.
+
+  You can also read properties this way, of course:
+
+  ::
+  [1, 2, 3]['length']         // => 3
+  [1, 2, 3]['push']           // => [native function]
+  :.
+
+  In fact, this is what the \verb|for (var ... in ...)| syntax was built to do: Enumerate the properties of an object. So, for example:
+
+  ::
+  var properties = [];
+  for (var k in document) properties.push (k);
+  properties          // => a boatload of strings
+  :.
+
+  However, \verb|for ... in| has a dark side. It will do some very weird things when you start modifying prototypes. For example:
+
+  ::
+  Object.prototype.foo = 'bar';
+  var properties = [];
+  for (var k in {}) properties.push (k);
+  properties          // => ['foo']
+  :.
+
+  To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
+  and second, use \verb|hasOwnProperty|:
+
+  ::
+  Object.prototype.foo = 'bar';
+  var properties = [], obj = {};
+  for (var k in obj) obj.hasOwnProperty (k) && properties.push (k);
+  properties          // => []
+  :.
+
+  In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
+
+- Further reading
+  I know it doesn't seem like I've written much, but it's the majority of the mystery behind JavaScript. Most of the rest is just thinking about how this stuff works and drawing natural
+  conclusions.
+
+  I highly recommend jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by pawing
+  around through it.
+
+  As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
+  terse and algorithmic. jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
+__+hts4YwAuF3J1uqk0NLZgitsljXQzO0PIcBbuS5QPf8
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -484,9 +656,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__0dYWazsW+GmnSrOLUUdpL1W1BuxlX2k59/S+avofy7g');
-/tmp/js-in-ten-minutes.TWAlHr5RpZ4WKfGKNxUBs6o+8Z2vR-aWegNKkk2gB7w/document.pdf
-__0dYWazsW+GmnSrOLUUdpL1W1BuxlX2k59/S+avofy7g
+meta::data('pdf-output-file', <<'__Rfxhv64VGx0KboNoB4+9zRhsEJyE4kl/wq2yjeHXxNE');
+/tmp/js-in-ten-minutes.04ggp7N7bUPvLgc99DiAITNzlxk3QbNYkEYXd+HkCOM/document.pdf
+__Rfxhv64VGx0KboNoB4+9zRhsEJyE4kl/wq2yjeHXxNE
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
