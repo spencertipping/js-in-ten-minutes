@@ -214,8 +214,8 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__3P4ZvPxF5B9JkzbPzbWDq8V4gMdpvghzeJ6E7CWj3d8');
-= JavaScript in Ten Programmer Minutes
+meta::data('document', <<'__TNRpaiTdoFu+efv1WJXRdSMN3ozROb75tDBWtj2kz8Q');
+= JavaScript in Ten Minutes
 a Spencer Tipping
 begin
 
@@ -224,7 +224,8 @@ begin
 
   e[
     + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.
-    + Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Never boxed.
+    + Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Also chucks a wobbly if you ask it for any attributes.
+      Never boxed.
     + Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
     + Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number|.
     + Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
@@ -305,7 +306,7 @@ begin
         f (5);
         :.
 
-        then \verb|this| will be the global object again. Nothing is remembered about where \verb|f| came from; it is all determined right at the invocation site.
+        then \verb|this| will be the global object again. Nothing is remembered about where \verb|f| came from; it is all determined right at the invocation site. \label{itm:forget}
 
       + If the function is invoked using \verb|apply| or \verb|call|, then \verb|this| points to whatever you set it to (unless you try to set it to \verb|null| or \verb|undefined|, in
         which case it will be the global object again):
@@ -333,7 +334,67 @@ begin
     \verb|bind (f, x) (y, z)|. That is, the first argument to both \verb|call| and \verb|apply| becomes \verb|this| inside the function, and the rest are passed through. In the case of
     \verb|apply| the arguments are expected in an array-like thing (\verb|arguments| works here), and in the case of \verb|call| they're passed in as given.
 
+    - Important consequence: eta-reduction
+      In most functional programming languages, you can eta-reduce things; that is, if you have a function of the form \verb|function (x) {return f (x)}|, you can just pass \verb|f| instead.
+      But in JavaScript that's not always a safe transformation; consider this code:
+
+      ::
+      Array.prototype.each = function (f) {
+        for (var i = 0, l = this.length; i < l; ++i)
+          f (this[i]);
+      };
+
+      var xs = [];
+      some_array.each (function (x) {xs.push (x)});
+      :.
+
+      It might be tempting to rewrite it more concisely as:
+
+      ::
+      some_array.each (xs.push);
+      :.
+
+      \noindent however this latter form will result in a mysterious JavaScript error when the native \verb|Array.push| function finds \verb|this| to be the global object instead of \verb|xs|.
+      The reason should be apparent: when the function is called inside \verb|each|, it is invoked as a function instead of a method. The fact that the function started out as a method on
+      \verb|xs| is forgotten. (Just like case \ref{itm:forget} above.)
+
+      The simplest way around this is to bind \verb|xs.push| to \verb|xs|:
+
+      ::
+      some_array.each (bind (xs.push, xs));
+      :.
+
 - Gotchas
+  - Semicolon inference
+    You won't run into any trouble if you always end lines with semicolons. However, most browsers consider it to be optional, and there is one potential surprise lurking if you choose to omit
+    them.
+
+    Most of the time JavaScript does what you mean. The only case where it might not is when you start a line with an open-paren, like this:
+
+    ::
+    var x = f
+    (y = x) (5)
+    :.
+
+    JavaScript joins these two lines, forming:
+
+    ::
+    var x = f (y = x) (5)
+    :.
+
+    The only way around this that I know of is to put a semicolon on the end of the first line.
+
+  - Void functions
+    Every function returns a value. If you don't use a \verb|return| statement, then your function returns \verb|undefined|; otherwise it returns whatever you tell it to. This can be a common
+    source of errors for people used to Ruby or Lisp; for instance,
+
+    ::
+    var x = (function (y) {y + 1}) (5);
+    :.
+
+    \noindent results in \verb|x| being \verb|undefined|. If you're likely to make this slip, there's an Emacs mode called ``js2-mode'' that identifies functions with no side-effects or return
+    values, and it will catch most of these errors.
+
   - {\tt var}
     Be careful how you define a variable. If you leave off the {\tt var} keyword, your variable will be defined in the global scope, which can cause some very subtle bugs:
 
@@ -405,7 +466,7 @@ begin
 
     So, {\em never use the \verb|==| operator unless you really want this behavior}. Instead, use \verb|===| (whose complement is \verb|!==|), which behaves sensibly. In particular, \verb|===|
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values (and might
-    fudge some of the sometimes-boxed values; I'm not sure about all of the edge cases).
+    fudge some of the sometimes-boxed values; I'm not sure about all of the edge cases). In particular, it's safe to use on strings: \verb|'foo' === 'f' + 'oo'|.
 
   - Boxed vs.~unboxed
     Boxed values can store properties. Unboxed values will silently fail to store them; for example:
@@ -476,8 +537,8 @@ begin
 
   - Things that will loudly fail
     There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
-    exist\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
-    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).}, then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
+    exist,\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
+    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
 
   - Don't use {\tt typeof}
     Because it behaves like this:
@@ -513,6 +574,18 @@ begin
     :.
 
     Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.
+
+  - Browser incompatibilities
+    Generally browsers since IE6 have good compatibility for core language stuff. One notable exception, however, is an IE bug that affects \verb|String.split|:
+
+    ::
+    var xs = 'foo bar bif'.split (/( )/);
+    xs          // on reasonable browsers: ['foo', ' ', 'bar', ' ', 'bif']
+    xs          // on IE: ['foo', 'bar', 'bif']
+    :.
+
+    I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a JavaScript
+    library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve nodes.}
 
 - Prototypes
   \label{sec:prototypes}
@@ -631,16 +704,330 @@ begin
 
   In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
 
-- Further reading
-  I know it doesn't seem like I've written much, but it's the majority of the mystery behind JavaScript. Most of the rest is just thinking about how this stuff works and drawing natural
-  conclusions.
+- Extending JavaScript
+  JavaScript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
 
-  I highly recommend jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by pawing
-  around through it.
+  - Iterators for cool people
+    Because languages like Ruby showed the world just how pass\'e \verb|for| loops really are, a lot of self-respecting functional programmers don't like to use them. If you're on Firefox, you
+    won't have to; the \verb|Array| prototype includes \verb|map| and \verb|forEach| functions already. But if you're writing cross-browser code and aren't using a library that provides them
+    for you, here is a good way to implement them:
+
+    ::
+    Array.prototype.each = Array.prototype.forEach || function (f) {
+      for (var i = 0, l = this.length; i < l; ++i)
+        f (this[i]);
+      return this;      // convenient for chaining
+    };
+
+    Array.prototype.map = Array.prototype.map || function (f) {
+      var ys = [];
+      for (var i = 0, l = this.length; i < l; ++i)
+        ys.push (f (this[i]));
+      return ys;
+    };
+    :.
+
+    As far as I know this is (almost) the fastest way to write these functions. We declare two variables up-front (\verb|i| and \verb|l|) so that the length is cached; JavaScript won't know
+    that \verb|this.length| is invariant with the \verb|for| loop, so it will check it every time if we fail to cache it. This is expensive because due to boxing we'd have a failed hash-lookup
+    on \verb|this| that then dropped down to \verb|this.__proto__|, where it would find the special property \verb|length|. Then, a method call would happen to retrieve
+    \verb|length|.\footnote{This gets into how JavaScript presents certain APIs. Internally it has a notion of gettable and settable properties, though there isn't a cross-browser way to
+    create them. But properties such as {\tt length}, {\tt childNodes}, etc.~are all really method calls and not field lookups. (Try assigning to one and you'll see.)}
+
+    The only further optimization that could be made is to go through the array backwards (which only works for \verb|each|, since \verb|map| is assumed to preserve order):
+
+    ::
+    Array.prototype.each = function (f) {
+      for (var i = this.length - 1; i >= 0; --i)
+        f (this[i]);
+    };
+    :.
+
+    This ends up being very slightly faster than the first implementation because it changes a floating-point subtraction (required to evaluate \verb|<| for non-zero quantities) into a sign
+    check, which internally is a bitwise \verb|and| and a zero-predicated jump. Unless your JavaScript engine inlines functions and you're really determined to have killer performance (at
+    which point I would ask why you're using JavaScript in the first place), you probably never need to consider the relative overhead of a non-zero \verb|<| vs.~a zero \verb|>=|.
+
+    You can also define an iterator for objects, but not like this:
+
+    ::
+    Object.prototype.each = function (f) {
+      // NO NO NO!!! Don't do it this way!
+      for (var k in this) this.hasOwnProperty (k) && f (k);
+    };
+    :.
+
+    Much better is to implement a separate \verb|keys| function:
+
+    ::
+    var keys = function (o) {
+      var xs = [];
+      for (var k in o) o.hasOwnProperty (k) && xs.push (k);
+      return xs;
+    };
+    :.
+
+    This way you avoid polluting the \verb|Object| prototype, which is shared across most other objects.
+
+  - Java classes and interfaces
+    No sane person would ever want to use these. But if you're insane or are being forced to, then the Google Web Toolkit will give you a way to shoot yourself in the foot and turn it into
+    JavaScript.
+
+  - Recursive metaclasses
+    There are different ways to approach this, but a straightforward way is to do something like this:
+
+    ::
+    var metaclass = {methods: {
+      add_to: function (o) {
+        var t = this;
+        keys (this.methods).each (function (k) {
+          o[k] = bind (t.methods[k], o);        // can't use /this/
+        });
+        return o}}};
+    metaclass.methods.add_to.call (metaclass, metaclass);
+    :.
+
+    At this point, \verb|metaclass| is now itself a \verb|metaclass|. We can start to implement instances of it:
+
+    ::
+    var regular_class = metaclass.add_to ({methods: {}});
+    regular_class.methods.def = function (name, value) {
+      this.methods[name] = value;
+      return this;
+    };
+    regular_class.methods.init = function (o) {
+      var instance = o || {methods: {}};
+      this.methods.init && this.methods.init.call (instance);
+      return this.add_to (instance);
+    };
+    regular_class.add_to (regular_class);
+    :.
+
+    This is a Ruby-style class where you can define public methods and a constructor. So, for example:
+
+    ::
+    var point = regular_class.init ();
+    point.def ('init', function () {this.x = this.y = 0});
+    point.def ('distance', function () {
+      return Math.sqrt (this.x * this.x + this.y * this.y)});
+    :.
+
+    We're using the rather verbose \verb|this.x|, which may offend some Python-eschewing Rubyists. Fortunately, we can use dynamic rewriting to use the \verb|$| where Rubyists would use
+    \verb|@|:\footnote{And, in fact, we could bake this {\tt ruby()} transformation into a metaclass to make it totally transparent if we wanted to.}
+
+    ::
+    var ruby = function (f) {
+      return eval (f.toString ().replace (/\$(\w+)/g,
+        function (_, name) {return 'this.' + name}));
+    };
+
+    point.def ('init', ruby (function () {$x = $y = 0}));
+    point.def ('distance', ruby (function () {
+      return Math.sqrt ($x * $x + $y * $y)}));
+    :.
+
+    And now you can use that class:
+
+    ::
+    var p = point.init ();
+    p.x = 3, p.y = 4;
+    p.distance ()       // => 5
+    :.
+
+    The advantage of using metaclasses is that you can do fun stuff with their structure. For example, suppose that we want to insert method tracing into all of our points for debugging
+    purposes:
+
+    ::
+    keys (point.methods).each (function (k) {
+      var original = point.methods[k];
+      point.methods[k] = function () {
+        trace ('Calling method ' + k +
+          ' with arguments ' + arguments.join (', '));
+        return original.apply (this, arguments);
+      };
+    });
+    :.
+
+    Now \verb|trace| (which isn't a JavaScript built-in, so you'd have to define it) would be called each time any method of a \verb|point| instance was called, and it would have access to
+    both the arguments and the state.
+
+  - Tail calls and delimited continuations
+    JavaScript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks. Luckily, encoding tail calls in JavaScript is actually really
+    simple:
+
+    ::
+    Function.prototype.tail = function () {return [this, arguments]};
+    Function.prototype.call_with_tco = function () {
+      var c      = [this, arguments];
+      var escape = arguments[arguments.length - 1];
+      while (c[0] !== escape)
+        c = c[0].apply (this, c[1]);
+      return escape.apply (this, c[1]);
+    };
+    :.
+
+    This is actually an implementation of delimited continuations, since the \verb|escape| parameter serves the purpose of the final CPS target.\footnote{If this didn't make sense, then see
+    the Wikipedia article on continuation-passing style.} So writing a factorial function, for example:
+
+    ::
+    // Standard recursive definition
+    var fact1 = function (n) {
+      return n > 0 ? n * fact1 (n - 1) : 1;
+    };
+    
+    // Tail-recursive definition
+    var fact2 = function (n, acc) {
+      return n > 0 ? fact2 (n - 1, acc * n) : acc;
+    };
+
+    // With our tail-call mechanism
+    var fact3 = function (n, acc, k) {
+      return n > 0 ? fact3.tail (n - 1, acc * n, k) : k.tail (acc);
+    };
+    :.
+
+    The first two functions can be called normally:
+
+    ::
+    fact1 (5)           // => 120
+    fact2 (5, 1)        // => 120
+    :.
+
+    \noindent though neither will run in constant stack space. The third one, on the other hand, will if we call it this way:
+
+    ::
+    var id = function (x) {return x};
+    fact3.call_with_tco (5, 1, id)      // => 120
+    :.
+
+    The way this tail-call optimization strategy works is that instead of creating new stack frames:
+
+    ::
+    fact1(5)
+      5 * fact1(4)
+        4 * fact1(3)
+        ...
+    :.
+
+    \noindent or even creating hollow ones:
+
+    ::
+    fact2(5, 1)
+      fact2(4, 5)
+        fact2(3, 20)
+        ...
+    :.
+
+    \noindent we pop out of the last stack frame before allocating a new one (treating the array of \verb|[function, args]| as a kind of continuation to be returned):
+
+    ::
+    fact3(5, 1, k) -> [fact3, [4, 5, k]]
+    fact3(4, 5, k) -> [fact3, [3, 20, k]]
+    fact3(3, 20, k) ...
+    :.
+
+    It isn't a bad performance hit, either -- the overhead of allocating a two-element array of pointers is minimal.
+
+  - Syntactic macros and operator overloading
+    Lazy scoping lets us do some cool stuff. Let's say we want to define a new syntax form for variable declaration, so that instead of this:
+
+    ::
+    var f = function () {
+      var y = (function (x) {return x + 1}) (5);
+      ...
+    };
+    :.
+
+    \noindent we could write this:
+
+    ::
+    var f = function () {
+      var y = (x + 1).where (x = 5);
+      ...
+    };
+    :.
+
+    This can be implemented in terms of regular expressions if we don't mind being woefully incorrect in some common cases:
+
+    ::
+    var expand_where = function (f) {
+      var s = f.toString ();
+      return eval (s.replace (/\(([^)]+)\)\.where\(([^)])\)/,
+        function (_, body, value) {
+          return '(function (' + value.split ('=')[0] + '){return ' +
+                 body + '}) (' + value.split ('=', 2)[1] + ')';
+        }));
+    };
+    :.
+
+    Now we can say this:
+
+    ::
+    var f = expand_where (function () {
+      var y = (x + 1).where (x = 5);
+      ...
+    });
+    :.
+
+    Obviously a recursive-descent parser is more appropriate because it wouldn't fail on simple paren boundaries. But the important thing is to realize that a function gives you a way to quote
+    code, just like in Lisp:
+
+    ::
+    (defmacro foo (bar) ...)
+    (foo some-expression)
+    :.
+
+    \noindent becomes this in JavaScript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):
+
+    ::
+    var defmacro = function (transform) {
+      return function (f) {
+        return eval (deparse (transform (parse (f.toString ()))));
+      };
+    };
+    var foo = defmacro (function (parse_tree) {
+      return ...;
+    });
+    foo (function () {some-expression});
+    :.
+
+    This principle can be extended to allow for operator overloading if we write a transformation that rewrites operators into method calls:
+
+    ::
+    x << y      // becomes x['<<'](y)
+    :.
+
+    Remember that property names aren't restricted to identifiers -- so we could overload the \verb|<<| operator for arrays to work like it does in Ruby with:
+
+    ::
+    Array.prototype['<<'] = function () {
+      for (var i = 0, l = arguments.length; i < l; ++i)
+        this.push (arguments[i]);
+      return this;
+    };
+    :.
+
+    The only thing that's unfortunate about implementing this stuff in JavaScript rather than Lisp is that JavaScript bakes syntactic constructs into the grammar, so trying to introduce new
+    syntactic forms such as \verb|when| isn't very convenient:
+    
+    ::
+    expand_when (function () {
+      when (foo) {      // compile error; { unexpected
+        bar ();
+      }
+    });
+    :.
+
+    But anything you can do inside the JavaScript parse tree is fair game.\footnote{Keep in mind that {\tt toString} will sometimes rewrite your function to standard form, so leveraging
+    ambiguities of the syntax isn't helpful. In Firefox, for example, writing expressions with excess parentheses is not useful because those excess parentheses are lost when you call {\tt
+    toString}.}
+
+- Further reading
+  I highly recommend reading jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by
+  pawing around through it.
 
   As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
-  terse and algorithmic. jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
-__3P4ZvPxF5B9JkzbPzbWDq8V4gMdpvghzeJ6E7CWj3d8
+  terse and algorithmic (and has no DOM involvement; I recommend jQuery for that). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and
+  functional metaprogramming.
+__TNRpaiTdoFu+efv1WJXRdSMN3ozROb75tDBWtj2kz8Q
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -719,9 +1106,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__Ef60KO3w794cxGlScUl8CXELS1Z+ESp2Rsj52+eMQdM');
-/tmp/js-in-ten-minutes.cIYjyk1LLucbi+r72Wf36mnMFz4G6WSHEsmca8fBwlU/document.pdf
-__Ef60KO3w794cxGlScUl8CXELS1Z+ESp2Rsj52+eMQdM
+meta::data('pdf-output-file', <<'__WlS+b+vbI/FWKhuMkGDBKRK3plItOvWFUIHtF/Gpa1Y');
+/tmp/js-in-ten-minutes.jGLWLwgDld8nbpzTzb5FErysX9YKXEzoIIA1-pzTlys/document.pdf
+__WlS+b+vbI/FWKhuMkGDBKRK3plItOvWFUIHtF/Gpa1Y
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
