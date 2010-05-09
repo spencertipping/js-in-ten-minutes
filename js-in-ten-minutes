@@ -214,7 +214,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__D51NqX8f1Xj4zXwDj1PUd6fXzcqDQwz0j0sdYivlR+M');
+meta::data('document', <<'__5zHq63I4yYEcvAlAQnEnXaorITk/udxYB1CdgvD8Ozk');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -232,7 +232,7 @@ begin
     + Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
     + Arrays -- e.g. \verb|[1, 2, "foo", [3, 4]]|. Always boxed. Instance of \verb|Array|.
     + Objects -- e.g. \verb|{foo: 'bar', bif: [1, 2]}|, which are really just hashtables. Always boxed. Instance of \verb|Object|.
-    + Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. always boxed. Instance of \verb|RegExp|.
+    + Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. Always boxed. Instance of \verb|RegExp|.
     + Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
   ]e
 
@@ -370,6 +370,11 @@ begin
       :.
 
 - Gotchas
+  JavaScript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
+  trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of JavaScript's
+  linguistic pathology.\footnote{There is plenty of this pathology despite JavaScript being generally an excellent language. This makes it ideal both for people who want to get things done,
+  and for bug-connoisseurs such as myself.}
+
   - Semicolon inference
     You won't run into any trouble if you always end lines with semicolons. However, most browsers consider it to be optional, and there is one potential surprise lurking if you choose to omit
     them.
@@ -546,6 +551,30 @@ begin
     exist,\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
     {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
 
+  - Throwing things
+    You can \verb|throw| a lot of different things, including unboxed values. This can have some advantages; in this code for instance:
+
+    ::
+    try {
+      ...
+      throw 3;
+    } catch (n) {
+      // n has no stack trace!
+    }
+    :.
+
+    \noindent the \verb|throw|/\verb|catch| doesn't compute a stack trace, making exception processing quite a bit faster than usual. But for debugging, it's much better to throw a proper
+    error:
+
+    ::
+    try {
+      ...
+      throw new Error(3);
+    } catch (e) {
+      // e has a stack trace, useful in Firebug among other things
+    }
+    :.
+
   - Don't use {\tt typeof}
     Because it behaves like this:
 
@@ -579,19 +608,20 @@ begin
     x === null || x === undefined ? x : x.constructor
     :.
 
-    Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.
+    Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.\footnote{Well, almost. If you ask for
+    it by putting {\tt null}, {\tt undefined}, or similarly inappropriate things on the right-hand side you'll get a {\tt TypeError}.}
 
   - Browser incompatibilities
     Generally browsers since IE6 have good compatibility for core language stuff. One notable exception, however, is an IE bug that affects \verb|String.split|:
 
     ::
-    var xs = 'foo bar bif'.split (/( )/);
+    var xs = 'foo bar bif'.split (/(\s+)/);
     xs          // on reasonable browsers: ['foo', ' ', 'bar', ' ', 'bif']
     xs          // on IE: ['foo', 'bar', 'bif']
     :.
 
     I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a JavaScript
-    library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve nodes.}
+    library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve and manipulate nodes.}
 
 - Prototypes
   \label{sec:prototypes}
@@ -778,14 +808,15 @@ begin
     JavaScript.
 
   - Recursive metaclasses
-    There are different ways to approach this, but a straightforward way is to do something like this:
+    There are different ways to approach this, but a straightforward way is to do something like this:\footnote{Remember that a class is just a function that produces instances. Nothing about
+    the {\tt new} keyword is necessary to write object-oriented code (thank goodness).}
 
     ::
     var metaclass = {methods: {
       add_to: function (o) {
         var t = this;
         keys (this.methods).each (function (k) {
-          o[k] = bind (t.methods[k], o);        // can't use /this/
+          o[k] = bind (t.methods[k], o);        // can't use /this/ here
         });
         return o}}};
     metaclass.methods.add_to.call (metaclass, metaclass);
@@ -856,8 +887,8 @@ begin
     both the arguments and the state.
 
   - Tail calls and delimited continuations
-    JavaScript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks. Luckily, encoding tail calls in JavaScript is actually really
-    simple:
+    JavaScript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks (the shortest I'm aware of is 500 frames, which goes by especially
+    quickly when you have bound functions and iterators). Luckily, encoding tail calls in JavaScript is actually really simple:
 
     ::
     Function.prototype.tail = function () {return [this, arguments]};
@@ -871,7 +902,8 @@ begin
     :.
 
     This is actually an implementation of delimited continuations, since the \verb|escape| parameter serves the purpose of the final CPS target.\footnote{If this didn't make sense, then see
-    the Wikipedia article on continuation-passing style.} So writing a factorial function, for example:
+    the Wikipedia article on continuation-passing style and delimited continuations. If that doesn't help, then you should probably skip this section.} So writing a factorial function, for
+    example:
 
     ::
     // Standard recursive definition
@@ -951,7 +983,7 @@ begin
     };
     :.
 
-    This can be implemented in terms of regular expressions if we don't mind being woefully incorrect in some common cases:
+    This can be implemented in terms of regular expressions if we don't mind being woefully incorrect about half the time:
 
     ::
     var expand_where = function (f) {
@@ -973,8 +1005,8 @@ begin
     });
     :.
 
-    Obviously a recursive-descent parser is more appropriate because it wouldn't fail on simple paren boundaries. But the important thing is to realize that a function gives you a way to quote
-    code, just like in Lisp:
+    Obviously a proper parser is more appropriate because it wouldn't fail on simple paren boundaries. But the important thing is to realize that a function gives you a way to quote code, just
+    like in Lisp:
 
     ::
     (defmacro foo (bar) ...)
@@ -1033,7 +1065,7 @@ begin
   As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
   terse and algorithmic (and has no DOM involvement; I recommend jQuery for that). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and
   functional metaprogramming.
-__D51NqX8f1Xj4zXwDj1PUd6fXzcqDQwz0j0sdYivlR+M
+__5zHq63I4yYEcvAlAQnEnXaorITk/udxYB1CdgvD8Ozk
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1112,9 +1144,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__wsvsDW4RdjnPC/oD1hUx1cnlg/Jnxf1YvKhgaYJmvds');
-/tmp/js-in-ten-minutes.RFEj+rPOPP93xhHA6Gb9T57mZaxcWbnCrl6Cdsqk4Dk/document.pdf
-__wsvsDW4RdjnPC/oD1hUx1cnlg/Jnxf1YvKhgaYJmvds
+meta::data('pdf-output-file', <<'__xfRnUUv+Ip/o6bB1/sM3nMJI74JlPLgcAb/q0KCEszg');
+/tmp/js-in-ten-minutes.nIkRjKYwHbPf9UEsHwwuA9svWXIKHcxu526SGn-HyQw/document.pdf
+__xfRnUUv+Ip/o6bB1/sM3nMJI74JlPLgcAb/q0KCEszg
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
