@@ -214,7 +214,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__TNRpaiTdoFu+efv1WJXRdSMN3ozROb75tDBWtj2kz8Q');
+meta::data('document', <<'__8GsqlMuAEgF95g2nu99Wkas4V68oYsjMP0Sf8eZs0jA');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -223,7 +223,8 @@ begin
   JavaScript has nine types. They are:
 
   e[
-    + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.
+    + Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.\footnote{Boxing is just a way of saying whether something has a pointer. A
+      boxed type is a reference type, and an unboxed type is a value type. In JavaScript, this has additional ramifications as well -- see section \ref{sec:boxing}.}
     + Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Also chucks a wobbly if you ask it for any attributes.
       Never boxed.
     + Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
@@ -240,11 +241,15 @@ begin
   instead using \verb|null| can make bugs much easier to track down.
 
 - Functions
-  Functions are first-class lexical closures.\footnote{Note that block scoping isn't used -- the only scopes that get introduced are at function boundaries.} They behave pretty much like
-  you'd expect, but there are several really cool things about functions and one really egregious disaster.
+  Functions are first-class lexical closures,\footnote{First-class in the sense that you can pass them around as values at runtime. You can't reliably introspect them, however, because while
+  you can obtain their source code via {\tt toString} you won't be able to access the values they close over.} just like \verb|lambda|s in Ruby or \verb|sub|s in Perl.\footnote{Note that block
+  scoping isn't used -- the only scopes that get introduced are at function boundaries.} They behave pretty much like you'd expect, but there are several really cool things about functions and
+  one really egregious disaster.
 
   - Variadic behavior (a cool thing)
-    Functions are always variadic. Formal parameters are bound if they're present; otherwise they're \verb|undefined|. For example:
+    Functions are always variadic.\footnote{The number of arguments a function accepts is referred to as its {\em arity}. So a unary function, which is monadic, takes one, a binary function,
+    which is dyadic, takes two, etc. A function that takes any number of arguments is said to be variadic.} Formal parameters are bound if they're present; otherwise they're \verb|undefined|.
+    For example:
 
     ::
     (function (x, y) {return x + y}) ('foo')        // => 'fooundefined'
@@ -469,6 +474,7 @@ begin
     fudge some of the sometimes-boxed values; I'm not sure about all of the edge cases). In particular, it's safe to use on strings: \verb|'foo' === 'f' + 'oo'|.
 
   - Boxed vs.~unboxed
+    \label{sec:boxing}
     Boxed values can store properties. Unboxed values will silently fail to store them; for example:
 
     ::
@@ -1027,7 +1033,7 @@ begin
   As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
   terse and algorithmic (and has no DOM involvement; I recommend jQuery for that). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and
   functional metaprogramming.
-__TNRpaiTdoFu+efv1WJXRdSMN3ozROb75tDBWtj2kz8Q
+__8GsqlMuAEgF95g2nu99Wkas4V68oYsjMP0Sf8eZs0jA
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1106,9 +1112,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__WlS+b+vbI/FWKhuMkGDBKRK3plItOvWFUIHtF/Gpa1Y');
-/tmp/js-in-ten-minutes.jGLWLwgDld8nbpzTzb5FErysX9YKXEzoIIA1-pzTlys/document.pdf
-__WlS+b+vbI/FWKhuMkGDBKRK3plItOvWFUIHtF/Gpa1Y
+meta::data('pdf-output-file', <<'__rLuq9ga18+cQNmX5+Ix+6cQaAHmD5EB5mff9Sn+T2Y8');
+/tmp/js-in-ten-minutes.BVeskmst8sPHQS44uK7odUCZd5E5IkDBp8z6dPMO++A/document.pdf
+__rLuq9ga18+cQNmX5+Ix+6cQaAHmD5EB5mff9Sn+T2Y8
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
@@ -1403,6 +1409,12 @@ __ik0ofu7R8gHAKSmMjek79V+yfgdjdK5Jmtwf7h8SpJk
 meta::function('reload', <<'__GwQjnnfuj0xQlervDJ9EVWzdmdz+XL3Gq0i9rdejvzM');
 execute($_) for (grep {! (/^internal::/ || /^bootstrap::/)} keys %data);
 __GwQjnnfuj0xQlervDJ9EVWzdmdz+XL3Gq0i9rdejvzM
+
+meta::function('render', <<'__546uCT2k3dYehC92peXEVgnEn7bjo1sd9UXLHkJbV9o');
+use File::Copy;
+compile();
+copy &{'pdf-output-file'}(), './js-in-ten-minutes.pdf';
+__546uCT2k3dYehC92peXEVgnEn7bjo1sd9UXLHkJbV9o
 
 meta::function('rm', <<'__7BVECTVo/mcT5+edC70WPc6S1xCbzAeyUCfCjkKWlww');
 for my $to_be_deleted (@_) {
