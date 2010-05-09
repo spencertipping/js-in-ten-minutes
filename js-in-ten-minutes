@@ -214,7 +214,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__8GsqlMuAEgF95g2nu99Wkas4V68oYsjMP0Sf8eZs0jA');
+meta::data('document', <<'__D51NqX8f1Xj4zXwDj1PUd6fXzcqDQwz0j0sdYivlR+M');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -340,7 +340,7 @@ begin
     \verb|apply| the arguments are expected in an array-like thing (\verb|arguments| works here), and in the case of \verb|call| they're passed in as given.
 
     - Important consequence: eta-reduction
-      In most functional programming languages, you can eta-reduce things; that is, if you have a function of the form \verb|function (x) {return f (x)}|, you can just pass \verb|f| instead.
+      In most functional programming languages, you can eta-reduce things; that is, if you have a function of the form \verb|function (x) {return f (x)}|, you can just use \verb|f| instead.
       But in JavaScript that's not always a safe transformation; consider this code:
 
       ::
@@ -1033,7 +1033,7 @@ begin
   As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
   terse and algorithmic (and has no DOM involvement; I recommend jQuery for that). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and
   functional metaprogramming.
-__8GsqlMuAEgF95g2nu99Wkas4V68oYsjMP0Sf8eZs0jA
+__D51NqX8f1Xj4zXwDj1PUd6fXzcqDQwz0j0sdYivlR+M
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1112,9 +1112,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__rLuq9ga18+cQNmX5+Ix+6cQaAHmD5EB5mff9Sn+T2Y8');
-/tmp/js-in-ten-minutes.BVeskmst8sPHQS44uK7odUCZd5E5IkDBp8z6dPMO++A/document.pdf
-__rLuq9ga18+cQNmX5+Ix+6cQaAHmD5EB5mff9Sn+T2Y8
+meta::data('pdf-output-file', <<'__wsvsDW4RdjnPC/oD1hUx1cnlg/Jnxf1YvKhgaYJmvds');
+/tmp/js-in-ten-minutes.RFEj+rPOPP93xhHA6Gb9T57mZaxcWbnCrl6Cdsqk4Dk/document.pdf
+__wsvsDW4RdjnPC/oD1hUx1cnlg/Jnxf1YvKhgaYJmvds
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
