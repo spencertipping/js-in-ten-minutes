@@ -217,10 +217,15 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__5zHq63I4yYEcvAlAQnEnXaorITk/udxYB1CdgvD8Ozk');
+meta::data('document', <<'__Qi55PDwsWcqGSKRhJnzrSriOVwgCBfCbma7ZemuuPOU');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
+
+\newpage
+- Introduction
+  This guide is for anyone who knows some JavaScript but would like a quick intro to its advanced features. It will be easier reading if you also know another functional language such as Ruby,
+  Perl, Python, ML, Scheme, etc, since I don't really explain how first-class functions work.
 
 - Types
   JavaScript has nine types. They are:
@@ -406,7 +411,8 @@ begin
     :.
 
     \noindent results in \verb|x| being \verb|undefined|. If you're likely to make this slip, there's an Emacs mode called ``js2-mode'' that identifies functions with no side-effects or return
-    values, and it will catch most of these errors.
+    values, and it will catch most of these errors.\footnote{Of course, that's if you're an Emacs person. If you prefer a {\em real} editor (wink), I wrote a custom JS highlighter that handles
+    some cases better than the builtin one: \url{http://github.com/spencertipping/js-vim-highlighter}.}
 
   - {\tt var}
     Be careful how you define a variable. If you leave off the {\tt var} keyword, your variable will be defined in the global scope, which can cause some very subtle bugs:
@@ -478,8 +484,8 @@ begin
     :.
 
     So, {\em never use the \verb|==| operator unless you really want this behavior}. Instead, use \verb|===| (whose complement is \verb|!==|), which behaves sensibly. In particular, \verb|===|
-    requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values (and might
-    fudge some of the sometimes-boxed values; I'm not sure about all of the edge cases). In particular, it's safe to use on strings: \verb|'foo' === 'f' + 'oo'|.
+    requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
+    is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
   - Boxed vs.~unboxed
     \label{sec:boxing}
@@ -552,7 +558,8 @@ begin
   - Things that will loudly fail
     There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
     exist,\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
-    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|.
+    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|. By extension, referring to local variables
+    that don't exist causes a \verb|ReferenceError|, since JavaScript thinks you're talking about a global variable.
 
   - Throwing things
     You can \verb|throw| a lot of different things, including unboxed values. This can have some advantages; in this code for instance:
@@ -623,12 +630,22 @@ begin
     xs          // on IE: ['foo', 'bar', 'bif']
     :.
 
+    A more subtle bug that took me several hours to find is that IE6 also doesn't return functions from \verb|eval()|:
+
+    ::
+    var f = eval('function() {return 5}');
+    f()         // on reasonable browsers: 5
+    f()         // on IE6: 'Object expected' (because f is undefined)
+    :.
+
     I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a JavaScript
     library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve and manipulate nodes.}
 
 - Prototypes
   \label{sec:prototypes}
-  Are overrated. Prototype-based OOP is almost as miserable as most other forms of OOP, and I never use it. But sometimes you need to do things with prototypes, so here's the basic idea.
+  I used to have a very anti-OOP comment here, but considering that I occasionally use prototypes for things I removed it. Despite my vendetta against JavaScript's blatant linguistic
+  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\em Java}Script, despite all of the dissimilarities.} prototype-based programming can be useful on
+  occasion. This section contains my subjective and biased view of it.
 
   Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
   mutant instance-generating thing that does something completely different. Here's an example:
@@ -656,11 +673,12 @@ begin
   typeof i === 'object'
   :.
 
-  The \verb|new| keyword is just a right-associative unary operator, so you can instantiate things first-class:
+  The \verb|new| keyword is just a right-associative (prefix) unary operator, so you can instantiate things first-class:
 
   ::
   var x = 5;
   new x.constructor ();     // Creates a boxed version of x
+  new new Function('x', 'this.x = 5');
   :.
 
   If you are going to program using this questionable design pattern, then you'll probably want to add methods to things:
@@ -674,6 +692,14 @@ begin
   :.
 
   You can find tons of information about this kind of prototype programming online.
+
+  - Why you should use prototypes
+    If you need a dynamic-dispatch pattern, then prototypes are probably your best bet and you should use them rather than a roll-your-own approach. Google's V8 has a bunch of
+    prototype-specific optimizations, as do later releases of Firefox. Also, prototypes save memory; having a pointer to a prototype is much cheaper than having $n$ pointers to $n$ attributes.
+
+    If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake. I have found prototypes to be an effective way to program in
+    JavaScript, but inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for
+    instance, is enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model. In my subjective and biased opinion, 
 
   - Autoboxing
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
@@ -732,7 +758,11 @@ begin
   :.
 
   To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
-  and second, use \verb|hasOwnProperty|:
+  and second, use \verb|hasOwnProperty|:\footnote{OK, so you're probably wondering why we don't see the {\tt hasOwnProperty} method from a {\tt for ... in} loop, since it's obviously a
+  property. The reason is that JavaScript's attributes themselves have attributes (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for
+  some attribute, then a {\tt for ... in} loop will not enumerate it. JavaScript doesn't provide a way to set the {\tt DontEnum} attribute on anything you add to a prototype, so using {\tt
+  hasOwnProperty} is a good way to prevent looping over other people's prototype extensions. Note that it fails sometimes on IE6; I believe it always returns false if the prototype supplies an
+  attribute of the same name.}
 
   ::
   Object.prototype.foo = 'bar';
@@ -743,7 +773,7 @@ begin
 
   In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
 
-- Extending JavaScript
+- If You Have 20 Minutes...
   JavaScript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
 
   - Iterators for cool people
@@ -788,13 +818,13 @@ begin
     You can also define an iterator for objects, but not like this:
 
     ::
+    // NO NO NO!!! Don't do it this way!
     Object.prototype.each = function (f) {
-      // NO NO NO!!! Don't do it this way!
       for (var k in this) this.hasOwnProperty (k) && f (k);
     };
     :.
 
-    Much better is to implement a separate \verb|keys| function:
+    Much better is to implement a separate \verb|keys| function to avoid polluting the \verb|Object| prototype:
 
     ::
     var keys = function (o) {
@@ -803,8 +833,6 @@ begin
       return xs;
     };
     :.
-
-    This way you avoid polluting the \verb|Object| prototype, which is shared across most other objects.
 
   - Java classes and interfaces
     No sane person would ever want to use these. But if you're insane or are being forced to, then the Google Web Toolkit will give you a way to shoot yourself in the foot and turn it into
@@ -1016,7 +1044,8 @@ begin
     (foo some-expression)
     :.
 
-    \noindent becomes this in JavaScript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):
+    \noindent becomes this in JavaScript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):\footnote{Real versions of these are implemented in
+    \url{http://github.com/spencertipping/caterwaul}, if you're interested to see what they look like. It's also a reasonable reference for syntactic edge cases.}
 
     ::
     var defmacro = function (transform) {
@@ -1065,10 +1094,17 @@ begin
   I highly recommend reading jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by
   pawing around through it.
 
-  As a shameless plug, I also recommend reading through Divergence (\url{http://spencertipping.com/divergence.js}), a library that I'm working on. It's very different from jQuery -- much more
-  terse and algorithmic (and has no DOM involvement; I recommend jQuery for that). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and
-  functional metaprogramming.
-__5zHq63I4yYEcvAlAQnEnXaorITk/udxYB1CdgvD8Ozk
+  Douglas Crockford has written some excellent JavaScript references, including the well-known {\em JavaScript: The Good Parts} and a less-well-known but free online tour of the language at
+  \url{http://javascript.crockford.com/survey.html}.\footnote{There are some discrepancies between his view of JavaScript and mine. Neither is incorrect, there are just different unstated
+  assumptions. For example, when he says that there are three primitives he is correct; he counts types by the number of unboxed representations, whereas I count them by the number of literal
+  constructors.}
+
+  As a shameless plug, I also recommend reading through Divergence (\url{http://github.com/spencertipping/divergence}), a library that I wrote. It's very different from jQuery -- much more
+  terse and algorithmic (and has no DOM involvement). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
+  
+  If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
+  use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
+__Qi55PDwsWcqGSKRhJnzrSriOVwgCBfCbma7ZemuuPOU
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1147,9 +1183,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__Nitp+TwOt1DO3UQIBmmOC6NAU40HL9poltzKPwCoDas');
-/tmp/js-in-ten-minutes.P5FwvxvA-jeMzI65rmmglC9+LKxR8K9NL1FBwBBa4Xw/document.pdf
-__Nitp+TwOt1DO3UQIBmmOC6NAU40HL9poltzKPwCoDas
+meta::data('pdf-output-file', <<'__7VBdDtoDlHi5ndT+OuEdYsQPXJ7BcZ0lX+64s9vL0yc');
+/tmp/js-in-ten-minutes.1FyE1rDk3euE99uIAIMTo0p97GncMQ+mZl0dMNRcxvE/document.pdf
+__7VBdDtoDlHi5ndT+OuEdYsQPXJ7BcZ0lX+64s9vL0yc
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
