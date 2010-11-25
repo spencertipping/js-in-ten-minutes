@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__Qi55PDwsWcqGSKRhJnzrSriOVwgCBfCbma7ZemuuPOU');
+meta::data('document', <<'__TxX+xDjrhqESx4T2blvFGRSjXlqVdZfhiaFjFEDKbVU');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -437,38 +437,40 @@ begin
     This is a beautiful disaster. Check this out:
 
     ::
-    var fs = [];
+    var x = {};
     for (var i = 0; i < 3; ++i)
-      fs.push (function () {return i});
-    var xs = [];
-    for (var j = 0; j < 3; ++j)
-      xs.push (fs[j]());
-    xs          // what will this be?
+      x['fn' + i] = function () { return i; };
+
+    x.fn0();  // What will these be?
+    x.fn1();
+    x.fn2();
     :.
 
-    A reasonable conclusion is that \verb|xs| is \verb|[0, 1, 2]|, since those were the values of \verb|i| when the functions were created. However, because of lazy scoping, \verb|xs| will in
-    fact have the value \verb|[3, 3, 3]|. The reason for this is that at the time of invocation, each function will see the current value of \verb|i|, which is 3. (Interestingly, rewriting the
-    second \verb|for| loop to use \verb|i| rather than \verb|j| will produce the expected output!)
+    What will our three functions return when they are eventually called? You might expect them to return 0, 1, and 2, respectively, since those were the values of \verb|i| when they were
+    created. However they will actually all return 3. This is because of JavaScript's lazy scoping: Upon creation, each function receives only a variable name and a scope in which to search
+    for it; the value itself is not resolved until the time of invocation, at which point \verb|i| will equal 3.
 
-    The simplest way around this is to introduce a layer of scope for each iteration:
+    The simplest way to fix this is to wrap our assignment in an anonymous function that is evaluated immediately, introducing another layer of scope. The following code works because within
+    the enclosing anonymous function, the value of \verb|new_i| never changes.
 
     ::
     for (var i = 0; i < 3; ++i)
-      (function (x) {fs.push (function () {return x})}) (i);
+      (function (new_i) {
+        x['fn' + new_i] = function () { return new_i; };
+      })(i);
     :.
 
-    The inner \verb|x| will be preserved by the reference from the function that gets pushed onto the array, and because it is in a separate scope its value will be invariant with future
-    changes to the outer \verb|i|. (Basically, we're forcing \verb|i| to be evaluated immediately, since it's now a function parameter.) Note, however, that the following code still won't
-    work:
+    By the way, you might be tempted to do this:
 
     ::
     for (var i = 0; i < 3; ++i) {
-      var x = i;
-      fs.push (function () {return x});
+      var j = i;
+      x['fn' + j] = function () { return j; };
     }
     :.
 
-    \noindent because \verb|x| will be scoped to the nearest enclosing function; so its value will change just as frequently as the value of \verb|i|.
+    This won't work for same reason that our original example failed: \verb|j| will be scoped to the nearest enclosing function (remember that JavaScript's scoping is function level, not block
+    level!), so its value is changing just as frequently as that of \verb|i|'s.
 
   - Equality
     Because the \verb|==| is lame, these are all true in JavaScript:
@@ -1104,7 +1106,7 @@ begin
   
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
-__Qi55PDwsWcqGSKRhJnzrSriOVwgCBfCbma7ZemuuPOU
+__TxX+xDjrhqESx4T2blvFGRSjXlqVdZfhiaFjFEDKbVU
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1183,9 +1185,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__eTM7IgYNxm7rpXKGsXh/cJnRLN4QwxmoDfClLj/CH/A');
-/tmp/js-in-ten-minutes.NvJ+trbGgTWyZfnBUIxMv93mH7b3u4xut89Wpt7eiBc/document.pdf
-__eTM7IgYNxm7rpXKGsXh/cJnRLN4QwxmoDfClLj/CH/A
+meta::data('pdf-output-file', <<'__AGAH4CBclK3QVCVvicnlIJl2v05AYLEWagV1xWUC94M');
+/tmp/js-in-ten-minutes.RbT6qDZUfVqtnUKgblnneicPZ29HP9ykwYLXxsjarq8/document.pdf
+__AGAH4CBclK3QVCVvicnlIJl2v05AYLEWagV1xWUC94M
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
