@@ -1,0 +1,894 @@
+\documentclass{article}
+\usepackage{amsmath,amssymb,pxfonts}
+\usepackage[utf8]{inputenc}
+\usepackage[colorlinks]{hyperref}
+\title{JavaScript in Ten Minutes}
+\author{Spencer Tipping}
+\begin{document}\maketitle\tableofcontents
+
+\newpage
+\section {Introduction}
+  This guide is for anyone who knows some JavaScript but would like a quick intro to its advanced features. It will be easier reading if you also know another functional language such as Ruby,
+  Perl, Python, ML, Scheme, etc, since I don't really explain how first-class functions work.
+
+\section {Types}
+  JavaScript has nine types. They are:
+
+\begin{enumerate}
+\item Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.\footnote{Boxing is just a way of saying whether something has a pointer. A
+      boxed type is a reference type, and an unboxed type is a value type. In JavaScript, this has additional ramifications as well -- see section \ref{sec:boxing}.}
+\item Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Also chucks a wobbly if you ask it for any attributes.
+      Never boxed.
+\item Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
+\item Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number|.
+\item Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
+\item Arrays -- e.g. \verb|[1, 2, "foo", [3, 4]]|. Always boxed. Instance of \verb|Array|.
+\item Objects -- e.g. \verb|{foo: 'bar', bif: [1, 2]}|, which are really just hashtables. Always boxed. Instance of \verb|Object|.
+\item Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. Always boxed. Instance of \verb|RegExp|.
+\item Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
+\end{enumerate}
+
+  The value \verb|null| is actually almost never produced by JavaScript. The only case you're likely to run across \verb|null| is if you assign it somewhere (most of the time you'll get
+  \verb|undefined| instead -- one notable exception is \verb|document.getElementById|, which returns \verb|null| if it can't find an element). Making sparing use of \verb|undefined| and
+  instead using \verb|null| can make bugs much easier to track down.
+
+\section {Functions}
+  Functions are first-class lexical closures,\footnote{First-class in the sense that you can pass them around as values at runtime. You can't reliably introspect them, however, because while
+  you can obtain their source code via {\tt toString} you won't be able to access the values they close over.} just like \verb|lambda|s in Ruby or \verb|sub|s in Perl.\footnote{Note that block
+  scoping isn't used -- the only scopes that get introduced are at function boundaries.} They behave pretty much like you'd expect, but there are several really cool things about functions and
+  one really egregious disaster.
+
+\subsection {Variadic behavior (a cool thing)}
+    Functions are always variadic.\footnote{The number of arguments a function accepts is referred to as its {\em arity}. So a unary function, which is monadic, takes one, a binary function,
+    which is dyadic, takes two, etc. A function that takes any number of arguments is said to be variadic.} Formal parameters are bound if they're present; otherwise they're \verb|undefined|.
+    For example:
+
+\begin{verbatim}
+(function (x, y) {return x + y}) ('foo')        // => 'fooundefined'
+\end{verbatim}
+
+    The arguments to your function can be accessed in a first-class way, too:
+
+\begin{verbatim}
+var f = function () {return arguments[0] + arguments[1]};
+var g = function () {return arguments.length};
+f ('foo')                   // => 'fooundefined'
+g (null, false, undefined)  // => 3
+\end{verbatim}
+
+    {\em The \verb|arguments| keyword is not an array!} It just looks like one. In particular, doing any of these will cause problems:
+
+\begin{verbatim}
+arguments.concat ([1, 2, 3])
+[1, 2, 3].concat (arguments)
+arguments.push ('foo')
+arguments.shift ()
+\end{verbatim}
+
+    To get an array from the \verb|arguments| object, you can say \verb|Array.prototype.slice.call (arguments)|. As far as I know that's the best way to go about it.
+
+\subsection {Lazy scoping (a cool thing)}
+    Internally, functions use a lexical scoping chain. However, the variables inside a function body aren't resolved until the function is called. This has some really nice advantages,
+    perhaps foremost among them self-reference:
+
+\begin{verbatim}
+var f = function () {return f};
+f () === f              // => true
+\end{verbatim}
+
+    \noindent\verb|<hacker-stuff>| Another nice thing is that you can create functions that refer to variables that might never exist. (Some people would consider this a non-feature.) This
+    means that JavaScript can be made to support syntactic macros via the \verb|toString| method:
+
+\begin{verbatim}
+var f = function () {return $0 + $1};
+var g = eval (f.toString ().replace (/\$(\d+)/g,
+          function (_, digits) {return 'arguments[' + digits + ']'}));
+g (5, 6)        // => 11
+\end{verbatim}
+
+    Theoretically by extending this principle one could implement true structural macros, operator overloading, a type system,\footnote{God forbid.} or other things.\verb|</hacker-stuff>|
+
+\subsection {The meaning of {\tt this} (the egregious disaster)}
+    One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and JavaScript makes it look nearly impossible. Outside of functions (in
+    the global scope, that is), the word \verb|this| refers to the {\em global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
+    is determined entirely by how the function is called. Here's how that works:
+    
+\begin{enumerate}
+\item If the function is called alone, e.g.~\verb|foo(5)|, then inside that function's body the word \verb|this| will be equivalent to the global object.
+\item If the function is called as a method, e.g.~\verb|x.foo(5)|, then inside that function's body the word \verb|this| refers to the object, in this case \verb|x|.
+\item If the function starts off as a method and then is called alone:
+
+\begin{verbatim}
+var f = x.foo;
+f (5);
+\end{verbatim}
+
+        then \verb|this| will be the global object again. Nothing is remembered about where \verb|f| came from; it is all determined right at the invocation site. \label{itm:forget}
+
+\item If the function is invoked using \verb|apply| or \verb|call|, then \verb|this| points to whatever you set it to (unless you try to set it to \verb|null| or \verb|undefined|, in
+        which case it will be the global object again):
+
+\begin{verbatim}
+var f = function () {return this};
+f.call (4)          // => 4
+f.call (0)          // => 0
+f.call (false)      // => false
+f.call (null)       // => [object global]
+\end{verbatim}
+\end{enumerate}
+
+    Given this unpredictability, most JavaScript libraries provide a facility to set a function's \verb|this| binding (referred to within JavaScript circles as just a function's binding)
+    to something invocation-invariant. The easiest way to do this is to define a function that proxies arguments using \verb|apply| and closes over the proper value (luckily, closure
+    variables behave normally):
+
+\begin{verbatim}
+var bind = function (f, this_value) {
+  return function () {return f.apply (this_value, arguments)};
+};
+\end{verbatim}
+
+    The difference between \verb|call| and \verb|apply| is straightforward: \verb|f.call (x, y, z)| is the same as \verb|f.apply (x, [y, z])|, which is the same as
+    \verb|bind (f, x) (y, z)|. That is, the first argument to both \verb|call| and \verb|apply| becomes \verb|this| inside the function, and the rest are passed through. In the case of
+    \verb|apply| the arguments are expected in an array-like thing (\verb|arguments| works here), and in the case of \verb|call| they're passed in as given.
+
+\subsubsection {Important consequence: eta-reduction}
+      In most functional programming languages, you can eta-reduce things; that is, if you have a function of the form \verb|function (x) {return f (x)}|, you can just use \verb|f| instead.
+      But in JavaScript that's not always a safe transformation; consider this code:
+
+\begin{verbatim}
+Array.prototype.each = function (f) {
+  for (var i = 0, l = this.length; i < l; ++i)
+    f (this[i]);
+};
+
+var xs = [];
+some_array.each (function (x) {xs.push (x)});
+\end{verbatim}
+
+      It might be tempting to rewrite it more concisely as:
+
+\begin{verbatim}
+some_array.each (xs.push);
+\end{verbatim}
+
+      \noindent however this latter form will result in a mysterious JavaScript error when the native \verb|Array.push| function finds \verb|this| to be the global object instead of \verb|xs|.
+      The reason should be apparent: when the function is called inside \verb|each|, it is invoked as a function instead of a method. The fact that the function started out as a method on
+      \verb|xs| is forgotten. (Just like case \ref{itm:forget} above.)
+
+      The simplest way around this is to bind \verb|xs.push| to \verb|xs|:
+
+\begin{verbatim}
+some_array.each (bind (xs.push, xs));
+\end{verbatim}
+
+\section {Gotchas}
+  JavaScript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
+  trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of JavaScript's
+  linguistic pathology.\footnote{There is plenty of this pathology despite JavaScript being generally an excellent language. This makes it ideal both for people who want to get things done,
+  and for bug-connoisseurs such as myself.}
+
+\subsection {Semicolon inference}
+    You won't run into any trouble if you always end lines with semicolons. However, most browsers consider it to be optional, and there is one potential surprise lurking if you choose to omit
+    them.
+
+    Most of the time JavaScript does what you mean. The only case where it might not is when you start a line with an open-paren, like this:
+
+\begin{verbatim}
+var x = f
+(y = x) (5)
+\end{verbatim}
+
+    JavaScript joins these two lines, forming:
+
+\begin{verbatim}
+var x = f (y = x) (5)
+\end{verbatim}
+
+    The only way around this that I know of is to put a semicolon on the end of the first line.
+
+\subsection {Void functions}
+    Every function returns a value. If you don't use a \verb|return| statement, then your function returns \verb|undefined|; otherwise it returns whatever you tell it to. This can be a common
+    source of errors for people used to Ruby or Lisp; for instance,
+
+\begin{verbatim}
+var x = (function (y) {y + 1}) (5);
+\end{verbatim}
+
+    \noindent results in \verb|x| being \verb|undefined|. If you're likely to make this slip, there's an Emacs mode called ``js2-mode'' that identifies functions with no side-effects or return
+    values, and it will catch most of these errors.\footnote{Of course, that's if you're an Emacs person. If you prefer a {\em real} editor (wink), I wrote a custom JS highlighter that handles
+    some cases better than the builtin one: \url{http://github.com/spencertipping/js-vim-highlighter}.}
+
+\subsection {{\tt var}}
+    Be careful how you define a variable. If you leave off the {\tt var} keyword, your variable will be defined in the global scope, which can cause some very subtle bugs:
+
+\begin{verbatim}
+var f = function () {         // f is toplevel, so global
+  var x = 5;                  // x is local to f
+  y = 6;                      // y is global
+};
+\end{verbatim}
+
+    As far as I know, the same is true in both types of \verb|for| loop:
+
+\begin{verbatim}
+for (i = 0; i < 10; ++i)      // i is global
+for (var i = 0; i < 10; ++i)  // i is local to the function
+for (k in some_object)        // k is global
+for (var k in some_object)    // k is local to the function
+\end{verbatim}
+
+\subsection {Lazy scoping and mutability}
+    This is a beautiful disaster. Check this out:
+
+\begin{verbatim}
+var x = {};
+for (var i = 0; i < 3; ++i)
+  x['fn' + i] = function () { return i; };
+
+x.fn0();  // What will these be?
+x.fn1();
+x.fn2();
+\end{verbatim}
+
+    What will our three functions return when they are eventually called? You might expect them to return 0, 1, and 2, respectively, since those were the values of \verb|i| when they were
+    created. However they will actually all return 3. This is because of JavaScript's lazy scoping: Upon creation, each function receives only a variable name and a scope in which to search
+    for it; the value itself is not resolved until the time of invocation, at which point \verb|i| will equal 3.
+
+    The simplest way to fix this is to wrap our assignment in an anonymous function that is evaluated immediately, introducing another layer of scope. The following code works because within
+    the enclosing anonymous function, the value of \verb|new_i| never changes.
+
+\begin{verbatim}
+for (var i = 0; i < 3; ++i)
+  (function (new_i) {
+    x['fn' + new_i] = function () { return new_i; };
+  })(i);
+\end{verbatim}
+
+    By the way, you might be tempted to do this:
+
+\begin{verbatim}
+for (var i = 0; i < 3; ++i) {
+  var j = i;
+  x['fn' + j] = function () { return j; };
+}
+\end{verbatim}
+
+    This won't work for same reason that our original example failed: \verb|j| will be scoped to the nearest enclosing function (remember that JavaScript's scoping is function level, not block
+    level!), so its value is changing just as frequently as that of \verb|i|'s.
+
+\subsection {Equality}
+    Because the \verb|==| is lame, these are all true in JavaScript:
+
+\begin{verbatim}
+null  == undefined
+null  == 0
+false == ''
+''    == 0
+true  == 1
+true  == '1'
+'1'   == 1
+\end{verbatim}
+
+    So, {\em never use the \verb|==| operator unless you really want this behavior}. Instead, use \verb|===| (whose complement is \verb|!==|), which behaves sensibly. In particular, \verb|===|
+    requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
+    is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
+
+\subsection {Boxed vs.~unboxed}
+    \label{sec:boxing}
+    Boxed values can store properties. Unboxed values will silently fail to store them; for example:
+
+\begin{verbatim}
+var x = 5;
+x.foo = 'bar';
+x.foo     // => undefined; x is an unboxed number.
+
+var x = new Number (5);
+x.foo = 'bar';
+x.foo     // => 'bar'; x is a pointer.
+\end{verbatim}
+
+    How does a sometimes-boxed value acquire a box? When you do one of these things:
+
+\begin{enumerate}
+\item Call its constructor directly, as we did above
+\item Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
+\end{enumerate}
+
+    All HTML objects, whether or not they're somehow native, will be boxed.
+
+\subsection {Things that will silently fail or misbehave}
+    JavaScript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
+
+\begin{verbatim}
+[1, 2, 3].foo     // => undefined
+[1, 2, 3][4]      // => undefined
+1 / 0             // => Infinity
+0 * 'foo'         // => NaN
+\end{verbatim}
+
+    This can be very useful. A couple of common idioms are things like these:
+
+\begin{verbatim}
+e.nodeType || (e = document.getElementById (e));
+options.foo = options.foo || 5;
+\end{verbatim}
+
+    Also, the language will convert {\em anything} to a string or number if you use \verb|+|. All of these expressions are strings:
+
+\begin{verbatim}
+null + [1, 2]             // => 'null1,2'
+undefined + [1, 2]        // => 'undefined1,2'
+3 + {}                    // => '3[object Object]'
+'' + true                 // => 'true'
+\end{verbatim}
+
+    And all of these are numbers:
+
+\begin{verbatim}
+undefined + undefined     // => NaN
+undefined + null          // => NaN
+null + null               // => 0
+{} + {}                   // => NaN
+true + true               // => 2
+0 + true                  // => 1
+\end{verbatim}
+
+    And some of my favorites:
+
+\begin{verbatim}
+null * false + (true * false) + (true * true)     // => 1
+true << true << true                              // => 4
+true / null                                       // => Infinity
+\end{verbatim}
+
+\subsection {Things that will loudly fail}
+    There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
+    exist,\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
+    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|. By extension, referring to local variables
+    that don't exist causes a \verb|ReferenceError|, since JavaScript thinks you're talking about a global variable.
+
+\subsection {Throwing things}
+    You can \verb|throw| a lot of different things, including unboxed values. This can have some advantages; in this code for instance:
+
+\begin{verbatim}
+try {
+  ...
+  throw 3;
+} catch (n) {
+  // n has no stack trace!
+}
+\end{verbatim}
+
+    \noindent the \verb|throw|/\verb|catch| doesn't compute a stack trace, making exception processing quite a bit faster than usual. But for debugging, it's much better to throw a proper
+    error:
+
+\begin{verbatim}
+try {
+  ...
+  throw new Error(3);
+} catch (e) {
+  // e has a stack trace, useful in Firebug among other things
+}
+\end{verbatim}
+
+\subsection {Don't use {\tt typeof}}
+    Because it behaves like this:
+
+\begin{verbatim}
+typeof function () {}     // => 'function'
+typeof [1, 2, 3]          // => 'object'
+typeof {}                 // => 'object'
+typeof null               // => 'object'
+typeof typeof             // hangs forever in Firefox
+\end{verbatim}
+
+    {\tt typeof} is a really lame way to detect the type of something. Better is to use an object's \verb|constructor| property, like this:
+
+\begin{verbatim}
+(function () {}).constructor      // => Function
+[1, 2, 3].constructor             // => Array
+({}).constructor                  // => Object
+true.constructor                  // => Boolean
+null.constructor                  // TypeError: null has no properties
+\end{verbatim}
+
+    In order to defend against \verb|null| and \verb|undefined| (neither of which let you ask for their constructor), you might try to rely on the falsity of these values:
+
+\begin{verbatim}
+x && x.constructor
+\end{verbatim}
+
+    But in fact that will fail for \verb|''|, \verb|0|, and \verb|false|. The only way I know to get around this is to just do the comparison:
+
+\begin{verbatim}
+x === null || x === undefined ? x : x.constructor
+\end{verbatim}
+
+    Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.\footnote{Well, almost. If you ask for
+    it by putting {\tt null}, {\tt undefined}, or similarly inappropriate things on the right-hand side you'll get a {\tt TypeError}.}
+
+\subsection {Browser incompatibilities}
+    Generally browsers since IE6 have good compatibility for core language stuff. One notable exception, however, is an IE bug that affects \verb|String.split|:
+
+\begin{verbatim}
+var xs = 'foo bar bif'.split (/(\s+)/);
+xs          // on reasonable browsers: ['foo', ' ', 'bar', ' ', 'bif']
+xs          // on IE: ['foo', 'bar', 'bif']
+\end{verbatim}
+
+    A more subtle bug that took me several hours to find is that IE6 also doesn't return functions from \verb|eval()|:
+
+\begin{verbatim}
+var f = eval('function() {return 5}');
+f()         // on reasonable browsers: 5
+f()         // on IE6: 'Object expected' (because f is undefined)
+\end{verbatim}
+
+    I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a JavaScript
+    library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve and manipulate nodes.}
+
+\section {Prototypes}
+  \label{sec:prototypes}
+  I used to have a very anti-OOP comment here, but considering that I occasionally use prototypes for things I removed it. Despite my vendetta against JavaScript's blatant linguistic
+  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\em Java}Script, despite all of the dissimilarities.} prototype-based programming can be useful on
+  occasion. This section contains my subjective and biased view of it.
+
+  Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
+  mutant instance-generating thing that does something completely different. Here's an example:
+
+\begin{verbatim}
+// A normal function:
+var f = function (x) {return x + 1};
+f (5)     // => 6
+\end{verbatim}
+
+  This is what most people expect. Here's the mutant behavior that almost nobody expects:
+
+\begin{verbatim}
+// A constructor function
+var f = function (x) {this.x = x + 1};    // no return!
+var i = new f (5);                        // i.x = 6
+\end{verbatim}
+
+  The following things are true at this point:
+
+\begin{verbatim}
+i.constructor === f
+i.__proto__ === i.constructor.prototype   // on Firefox, anyway
+i instanceof f
+typeof i === 'object'
+\end{verbatim}
+
+  The \verb|new| keyword is just a right-associative (prefix) unary operator, so you can instantiate things first-class:
+
+\begin{verbatim}
+var x = 5;
+new x.constructor ();     // Creates a boxed version of x
+new new Function('x', 'this.x = 5');
+\end{verbatim}
+
+  If you are going to program using this questionable design pattern, then you'll probably want to add methods to things:\footnote{This section used to say that {\tt i.x} would evaluate to
+  {\tt 7}. That isn't true though. It's actually 6, as indicated. (Thanks to Daniel Gasparotto for pointing this out.)}
+
+\begin{verbatim}
+var f = function (x) {this.x = x};
+f.prototype.add_one = function () {++this.x};
+var i = new f (5);
+i.add_one ();
+i.x               // => 6
+\end{verbatim}
+
+  You can find tons of information about this kind of prototype programming online.
+
+\subsection {Why you should use prototypes}
+    If you need a dynamic-dispatch pattern, then prototypes are probably your best bet and you should use them rather than a roll-your-own approach. Google's V8 has a bunch of
+    prototype-specific optimizations, as do later releases of Firefox. Also, prototypes save memory; having a pointer to a prototype is much cheaper than having $n$ pointers to $n$ attributes.
+
+    If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake. I have found prototypes to be an effective way to program in
+    JavaScript, but inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for
+    instance, is enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model.
+
+\subsection {Autoboxing}
+    You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
+    returns either {\tt true} or {\tt false}.}
+
+\begin{verbatim}
+Boolean.prototype.xor = function (rhs) {return !! this !== !! rhs};
+\end{verbatim}
+
+    And, upon running this code, you'd run into this tragically unfortunate property:
+
+\begin{verbatim}
+false.xor (false)         // => true
+\end{verbatim}
+
+    The reason is that when you treat an unboxed value as an object (e.g.~invoke one of its methods), it gets temporarily promoted into a boxed value for the purposes of that method call.
+    This doesn't change its value later, but it does mean that it loses whatever falsity it once had. Depending on the type you're working with, you can convert it back to an unboxed value:
+
+\begin{verbatim}
+function (rhs) {return !! this.valueOf () !== !! rhs};
+\end{verbatim}
+
+\section {A Really Awesome Equality}
+  There is something really important about JavaScript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
+  \verb|foo['bar']|. You could safely make this transformation to your code ahead of time, whether on value-properties, methods, or anything else. By extension, you can assign non-identifier
+  things to object properties:
+
+\begin{verbatim}
+var foo = [1, 2, 3];
+foo['@snorkel!'] = 4;
+foo['@snorkel!']    // => 4
+\end{verbatim}
+
+  You can also read properties this way, of course:
+
+\begin{verbatim}
+[1, 2, 3]['length']         // => 3
+[1, 2, 3]['push']           // => [native function]
+\end{verbatim}
+
+  In fact, this is what the \verb|for (var ... in ...)| syntax was built to do: Enumerate the properties of an object. So, for example:
+
+\begin{verbatim}
+var properties = [];
+for (var k in document) properties.push (k);
+properties          // => a boatload of strings
+\end{verbatim}
+
+  However, \verb|for ... in| has a dark side. It will do some very weird things when you start modifying prototypes. For example:
+
+\begin{verbatim}
+Object.prototype.foo = 'bar';
+var properties = [];
+for (var k in {}) properties.push (k);
+properties          // => ['foo']
+\end{verbatim}
+
+  To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
+  and second, use \verb|hasOwnProperty|:\footnote{OK, so you're probably wondering why we don't see the {\tt hasOwnProperty} method from a {\tt for ... in} loop, since it's obviously a
+  property. The reason is that JavaScript's attributes themselves have attributes (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for
+  some attribute, then a {\tt for ... in} loop will not enumerate it. JavaScript doesn't provide a way to set the {\tt DontEnum} attribute on anything you add to a prototype, so using {\tt
+  hasOwnProperty} is a good way to prevent looping over other people's prototype extensions. Note that it fails sometimes on IE6; I believe it always returns false if the prototype supplies an
+  attribute of the same name.}
+
+\begin{verbatim}
+Object.prototype.foo = 'bar';
+var properties = [], obj = {};
+for (var k in obj) obj.hasOwnProperty (k) && properties.push (k);
+properties          // => []
+\end{verbatim}
+
+  In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
+
+\section {If You Have 20 Minutes...}
+  JavaScript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
+
+\subsection {Iterators for cool people}
+    Because languages like Ruby showed the world just how pass\'e \verb|for| loops really are, a lot of self-respecting functional programmers don't like to use them. If you're on Firefox, you
+    won't have to; the \verb|Array| prototype includes \verb|map| and \verb|forEach| functions already. But if you're writing cross-browser code and aren't using a library that provides them
+    for you, here is a good way to implement them:
+
+\begin{verbatim}
+Array.prototype.each = Array.prototype.forEach || function (f) {
+  for (var i = 0, l = this.length; i < l; ++i)
+    f (this[i]);
+  return this;      // convenient for chaining
+};
+
+Array.prototype.map = Array.prototype.map || function (f) {
+  var ys = [];
+  for (var i = 0, l = this.length; i < l; ++i)
+    ys.push (f (this[i]));
+  return ys;
+};
+\end{verbatim}
+
+    As far as I know this is (almost) the fastest way to write these functions. We declare two variables up-front (\verb|i| and \verb|l|) so that the length is cached; JavaScript won't know
+    that \verb|this.length| is invariant with the \verb|for| loop, so it will check it every time if we fail to cache it. This is expensive because due to boxing we'd have a failed hash-lookup
+    on \verb|this| that then dropped down to \verb|this.__proto__|, where it would find the special property \verb|length|. Then, a method call would happen to retrieve
+    \verb|length|.\footnote{This gets into how JavaScript presents certain APIs. Internally it has a notion of gettable and settable properties, though there isn't a cross-browser way to
+    create them. But properties such as {\tt length}, {\tt childNodes}, etc.~are all really method calls and not field lookups. (Try assigning to one and you'll see.)}
+
+    The only further optimization that could be made is to go through the array backwards (which only works for \verb|each|, since \verb|map| is assumed to preserve order):
+
+\begin{verbatim}
+Array.prototype.each = function (f) {
+  for (var i = this.length - 1; i >= 0; --i)
+    f (this[i]);
+};
+\end{verbatim}
+
+    This ends up being very slightly faster than the first implementation because it changes a floating-point subtraction (required to evaluate \verb|<| for non-zero quantities) into a sign
+    check, which internally is a bitwise \verb|and| and a zero-predicated jump. Unless your JavaScript engine inlines functions and you're really determined to have killer performance (at
+    which point I would ask why you're using JavaScript in the first place), you probably never need to consider the relative overhead of a non-zero \verb|<| vs.~a zero \verb|>=|.
+
+    You can also define an iterator for objects, but not like this:
+
+\begin{verbatim}
+// NO NO NO!!! Don't do it this way!
+Object.prototype.each = function (f) {
+  for (var k in this) this.hasOwnProperty (k) && f (k);
+};
+\end{verbatim}
+
+    Much better is to implement a separate \verb|keys| function to avoid polluting the \verb|Object| prototype:
+
+\begin{verbatim}
+var keys = function (o) {
+  var xs = [];
+  for (var k in o) o.hasOwnProperty (k) && xs.push (k);
+  return xs;
+};
+\end{verbatim}
+
+\subsection {Java classes and interfaces}
+    No sane person would ever want to use these. But if you're insane or are being forced to, then the Google Web Toolkit will give you a way to shoot yourself in the foot and turn it into
+    JavaScript.
+
+\subsection {Recursive metaclasses}
+    There are different ways to approach this, but a straightforward way is to do something like this:\footnote{Remember that a class is just a function that produces instances. Nothing about
+    the {\tt new} keyword is necessary to write object-oriented code (thank goodness).}
+
+\begin{verbatim}
+var metaclass = {methods: {
+  add_to: function (o) {
+    var t = this;
+    keys (this.methods).each (function (k) {
+      o[k] = bind (t.methods[k], o);        // can't use /this/ here
+    });
+    return o}}};
+metaclass.methods.add_to.call (metaclass, metaclass);
+\end{verbatim}
+
+    At this point, \verb|metaclass| is now itself a \verb|metaclass|. We can start to implement instances of it:
+
+\begin{verbatim}
+var regular_class = metaclass.add_to ({methods: {}});
+regular_class.methods.def = function (name, value) {
+  this.methods[name] = value;
+  return this;
+};
+regular_class.methods.init = function (o) {
+  var instance = o || {methods: {}};
+  this.methods.init && this.methods.init.call (instance);
+  return this.add_to (instance);
+};
+regular_class.add_to (regular_class);
+\end{verbatim}
+
+    This is a Ruby-style class where you can define public methods and a constructor. So, for example:
+
+\begin{verbatim}
+var point = regular_class.init ();
+point.def ('init', function () {this.x = this.y = 0});
+point.def ('distance', function () {
+  return Math.sqrt (this.x * this.x + this.y * this.y)});
+\end{verbatim}
+
+    We're using the rather verbose \verb|this.x|, which may offend some Python-eschewing Rubyists. Fortunately, we can use dynamic rewriting to use the \verb|$| where Rubyists would use
+    \verb|@|:\footnote{And, in fact, we could bake this {\tt ruby()} transformation into a metaclass to make it totally transparent if we wanted to.}
+
+\begin{verbatim}
+var ruby = function (f) {
+  return eval (f.toString ().replace (/\$(\w+)/g,
+    function (_, name) {return 'this.' + name}));
+};
+
+point.def ('init', ruby (function () {$x = $y = 0}));
+point.def ('distance', ruby (function () {
+  return Math.sqrt ($x * $x + $y * $y)}));
+\end{verbatim}
+
+    And now you can use that class:
+
+\begin{verbatim}
+var p = point.init ();
+p.x = 3, p.y = 4;
+p.distance ()       // => 5
+\end{verbatim}
+
+    The advantage of using metaclasses is that you can do fun stuff with their structure. For example, suppose that we want to insert method tracing into all of our points for debugging
+    purposes:
+
+\begin{verbatim}
+keys (point.methods).each (function (k) {
+  var original = point.methods[k];
+  point.methods[k] = function () {
+    trace ('Calling method ' + k +
+      ' with arguments ' + arguments.join (', '));
+    return original.apply (this, arguments);
+  };
+});
+\end{verbatim}
+
+    Now \verb|trace| (which isn't a JavaScript built-in, so you'd have to define it) would be called each time any method of a \verb|point| instance was called, and it would have access to
+    both the arguments and the state.
+
+\subsection {Tail calls and delimited continuations}
+    JavaScript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks (the shortest I'm aware of is 500 frames, which goes by especially
+    quickly when you have bound functions and iterators). Luckily, encoding tail calls in JavaScript is actually really simple:
+
+\begin{verbatim}
+Function.prototype.tail = function () {return [this, arguments]};
+Function.prototype.call_with_tco = function () {
+  var c      = [this, arguments];
+  var escape = arguments[arguments.length - 1];
+  while (c[0] !== escape)
+    c = c[0].apply (this, c[1]);
+  return escape.apply (this, c[1]);
+};
+\end{verbatim}
+
+    This is actually an implementation of delimited continuations, since the \verb|escape| parameter serves the purpose of the final CPS target.\footnote{If this didn't make sense, then see
+    the Wikipedia article on continuation-passing style and delimited continuations. If that doesn't help, then you should probably skip this section.} So writing a factorial function, for
+    example:
+
+\begin{verbatim}
+// Standard recursive definition
+var fact1 = function (n) {
+  return n > 0 ? n * fact1 (n - 1) : 1;
+};
+
+// Tail-recursive definition
+var fact2 = function (n, acc) {
+  return n > 0 ? fact2 (n - 1, acc * n) : acc;
+};
+
+// With our tail-call mechanism
+var fact3 = function (n, acc, k) {
+  return n > 0 ? fact3.tail (n - 1, acc * n, k) : k.tail (acc);
+};
+\end{verbatim}
+
+    The first two functions can be called normally:
+
+\begin{verbatim}
+fact1 (5)           // => 120
+fact2 (5, 1)        // => 120
+\end{verbatim}
+
+    \noindent though neither will run in constant stack space. The third one, on the other hand, will if we call it this way:
+
+\begin{verbatim}
+var id = function (x) {return x};
+fact3.call_with_tco (5, 1, id)      // => 120
+\end{verbatim}
+
+    The way this tail-call optimization strategy works is that instead of creating new stack frames:
+
+\begin{verbatim}
+fact1(5)
+  5 * fact1(4)
+    4 * fact1(3)
+    ...
+\end{verbatim}
+
+    \noindent or even creating hollow ones:
+
+\begin{verbatim}
+fact2(5, 1)
+  fact2(4, 5)
+    fact2(3, 20)
+    ...
+\end{verbatim}
+
+    \noindent we pop out of the last stack frame before allocating a new one (treating the array of \verb|[function, args]| as a kind of continuation to be returned):
+
+\begin{verbatim}
+fact3(5, 1, k) -> [fact3, [4, 5, k]]
+fact3(4, 5, k) -> [fact3, [3, 20, k]]
+fact3(3, 20, k) ...
+\end{verbatim}
+
+    It isn't a bad performance hit, either -- the overhead of allocating a two-element array of pointers is minimal.
+
+\subsection {Syntactic macros and operator overloading}
+    Lazy scoping lets us do some cool stuff. Let's say we want to define a new syntax form for variable declaration, so that instead of this:
+
+\begin{verbatim}
+var f = function () {
+  var y = (function (x) {return x + 1}) (5);
+  ...
+};
+\end{verbatim}
+
+    \noindent we could write this:
+
+\begin{verbatim}
+var f = function () {
+  var y = (x + 1).where (x = 5);
+  ...
+};
+\end{verbatim}
+
+    This can be implemented in terms of regular expressions if we don't mind being woefully incorrect about half the time:
+
+\begin{verbatim}
+var expand_where = function (f) {
+  var s = f.toString ();
+  return eval (s.replace (/\(([^)]+)\)\.where\(([^)])\)/,
+    function (_, body, value) {
+      return '(function (' + value.split ('=')[0] + '){return ' +
+             body + '}) (' + value.split ('=', 2)[1] + ')';
+    }));
+};
+\end{verbatim}
+
+    Now we can say this:
+
+\begin{verbatim}
+var f = expand_where (function () {
+  var y = (x + 1).where (x = 5);
+  ...
+});
+\end{verbatim}
+
+    Obviously a proper parser is more appropriate because it wouldn't fail on simple paren boundaries. But the important thing is to realize that a function gives you a way to quote code, just
+    like in Lisp:
+
+\begin{verbatim}
+(defmacro foo (bar) ...)
+(foo some-expression)
+\end{verbatim}
+
+    \noindent becomes this in JavaScript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):\footnote{Real versions of these are implemented in
+    \url{http://github.com/spencertipping/caterwaul}, if you're interested to see what they look like. It's also a reasonable reference for syntactic edge cases.}
+
+\begin{verbatim}
+var defmacro = function (transform) {
+  return function (f) {
+    return eval (deparse (transform (parse (f.toString ()))));
+  };
+};
+var foo = defmacro (function (parse_tree) {
+  return ...;
+});
+foo (function () {some-expression});
+\end{verbatim}
+
+    This principle can be extended to allow for operator overloading if we write a transformation that rewrites operators into method calls:
+
+\begin{verbatim}
+x << y      // becomes x['<<'](y)
+\end{verbatim}
+
+    Remember that property names aren't restricted to identifiers -- so we could overload the \verb|<<| operator for arrays to work like it does in Ruby with:
+
+\begin{verbatim}
+Array.prototype['<<'] = function () {
+  for (var i = 0, l = arguments.length; i < l; ++i)
+    this.push (arguments[i]);
+  return this;
+};
+\end{verbatim}
+
+    The only thing that's unfortunate about implementing this stuff in JavaScript rather than Lisp is that JavaScript bakes syntactic constructs into the grammar, so trying to introduce new
+    syntactic forms such as \verb|when| isn't very convenient:
+    
+\begin{verbatim}
+expand_when (function () {
+  when (foo) {      // compile error; { unexpected
+    bar ();
+  }
+});
+\end{verbatim}
+
+    But anything you can do inside the JavaScript parse tree is fair game.\footnote{Keep in mind that {\tt toString} will sometimes rewrite your function to standard form, so leveraging
+    ambiguities of the syntax isn't helpful. In Firefox, for example, writing expressions with excess parentheses is not useful because those excess parentheses are lost when you call {\tt
+    toString}.}
+
+\section {Further reading}
+  I highly recommend reading jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by
+  pawing around through it.
+
+  Douglas Crockford has written some excellent JavaScript references, including the well-known {\em JavaScript: The Good Parts} and a less-well-known but free online tour of the language at
+  \url{http://javascript.crockford.com/survey.html}.\footnote{There are some discrepancies between his view of JavaScript and mine. Neither is incorrect, there are just different unstated
+  assumptions. For example, when he says that there are three primitives he is correct; he counts types by the number of unboxed representations, whereas I count them by the number of literal
+  constructors.}
+
+  As a shameless plug, I also recommend reading through Divergence (\url{http://github.com/spencertipping/divergence}), a library that I wrote. It's very different from jQuery -- much more
+  terse and algorithmic (and has no DOM involvement). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
+  
+  If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
+  use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
+\end{document}
