@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__TxX+xDjrhqESx4T2blvFGRSjXlqVdZfhiaFjFEDKbVU');
+meta::data('document', <<'__iElZsJiWCbudc2lNPkjucgNYFD4+Q2LmqlFhbbCcudw');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -683,14 +683,15 @@ begin
   new new Function('x', 'this.x = 5');
   :.
 
-  If you are going to program using this questionable design pattern, then you'll probably want to add methods to things:
+  If you are going to program using this questionable design pattern, then you'll probably want to add methods to things:\footnote{This section used to say that {\tt i.x} would evaluate to
+  {\tt 7}. That isn't true though. It's actually 6, as indicated. (Thanks to Daniel Gasparotto for pointing this out.)}
 
   ::
   var f = function (x) {this.x = x};
   f.prototype.add_one = function () {++this.x};
   var i = new f (5);
   i.add_one ();
-  i.x               // => 7
+  i.x               // => 6
   :.
 
   You can find tons of information about this kind of prototype programming online.
@@ -701,7 +702,7 @@ begin
 
     If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake. I have found prototypes to be an effective way to program in
     JavaScript, but inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for
-    instance, is enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model. In my subjective and biased opinion, 
+    instance, is enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model.
 
   - Autoboxing
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
@@ -1106,7 +1107,7 @@ begin
   
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
-__TxX+xDjrhqESx4T2blvFGRSjXlqVdZfhiaFjFEDKbVU
+__iElZsJiWCbudc2lNPkjucgNYFD4+Q2LmqlFhbbCcudw
 
 meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
 \documentclass{article}
@@ -1185,9 +1186,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__AGAH4CBclK3QVCVvicnlIJl2v05AYLEWagV1xWUC94M');
-/tmp/js-in-ten-minutes.RbT6qDZUfVqtnUKgblnneicPZ29HP9ykwYLXxsjarq8/document.pdf
-__AGAH4CBclK3QVCVvicnlIJl2v05AYLEWagV1xWUC94M
+meta::data('pdf-output-file', <<'__BktgIbKyc1azDH4AwtgvtvNOpjFBwUHDZuavw4FFcf4');
+/tmp/js-in-ten-minutes.3G3qp4EolCitNLXRC4Wu2z-XquX1+cufkuuoWokyGUY/document.pdf
+__BktgIbKyc1azDH4AwtgvtvNOpjFBwUHDZuavw4FFcf4
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
