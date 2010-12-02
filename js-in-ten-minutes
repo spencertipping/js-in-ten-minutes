@@ -1186,9 +1186,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__BktgIbKyc1azDH4AwtgvtvNOpjFBwUHDZuavw4FFcf4');
-/tmp/js-in-ten-minutes.3G3qp4EolCitNLXRC4Wu2z-XquX1+cufkuuoWokyGUY/document.pdf
-__BktgIbKyc1azDH4AwtgvtvNOpjFBwUHDZuavw4FFcf4
+meta::data('pdf-output-file', <<'__o4oalMiZ+Hg3VjG2UbWyCUYoQe9VgyhUqYQT8cyomIs');
+/tmp/js-in-ten-minutes.zaSCWRikYXg9fB0VGSiP76+-ROpEcxmYF8aFUHurPx4/document.pdf
+__o4oalMiZ+Hg3VjG2UbWyCUYoQe9VgyhUqYQT8cyomIs
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
@@ -1498,11 +1498,12 @@ meta::function('reload', <<'__GwQjnnfuj0xQlervDJ9EVWzdmdz+XL3Gq0i9rdejvzM');
 execute($_) for (grep {! (/^internal::/ || /^bootstrap::/)} keys %data);
 __GwQjnnfuj0xQlervDJ9EVWzdmdz+XL3Gq0i9rdejvzM
 
-meta::function('render', <<'__546uCT2k3dYehC92peXEVgnEn7bjo1sd9UXLHkJbV9o');
+meta::function('render', <<'__FnElnVt/3KpagnCCpoXWJvm+mW+WFkRxKvTOxQyYOF4');
 use File::Copy;
 compile();
+file::write('./js-in-ten-minutes.tex', &{'compile-to-tex'}());
 copy &{'pdf-output-file'}(), './js-in-ten-minutes.pdf';
-__546uCT2k3dYehC92peXEVgnEn7bjo1sd9UXLHkJbV9o
+__FnElnVt/3KpagnCCpoXWJvm+mW+WFkRxKvTOxQyYOF4
 
 meta::function('rm', <<'__7BVECTVo/mcT5+edC70WPc6S1xCbzAeyUCfCjkKWlww');
 for my $to_be_deleted (@_) {
