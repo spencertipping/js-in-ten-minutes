@@ -1,0 +1,16 @@
+Since this project is getting a lot of attention lately, here are the license
+terms (and let me know if it be helpful to change them; I'm flexible):
+
+The Perl object is licensed however it needs to be licensed to stay legal
+considering that it uses the GNU readline Perl module. But nobody's going to be
+using the Perl object anyway, so I suspect this doesn't matter.
+
+The TeX file and PDF are licensed under the MIT license or
+/L?GPL v[23](\.\d+)?/. This means it's totally OK to:
+
+  1. Create a modified version (it would be cool if it were obviously marked
+     as being modified).
+  2. Convert the guide to another language, such as Ruby.
+  3. Fix errors, bugs, or misleading segments, publicly complain about the fact
+     that they were there in the first place, and then issue a pull request.
+     (Though commenting on a commit is usually all it takes :) )
