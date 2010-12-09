@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__iElZsJiWCbudc2lNPkjucgNYFD4+Q2LmqlFhbbCcudw');
+meta::data('document', <<'__KXFhxqMo//xqtftpU/wTMx4J7jeRVJU5AifjcMl4KIE');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -255,7 +255,7 @@ begin
   one really egregious disaster.
 
   - Variadic behavior (a cool thing)
-    Functions are always variadic.\footnote{The number of arguments a function accepts is referred to as its {\em arity}. So a unary function, which is monadic, takes one, a binary function,
+    Functions are always variadic.\footnote{The number of arguments a function accepts is referred to as its {\it arity}. So a unary function, which is monadic, takes one, a binary function,
     which is dyadic, takes two, etc. A function that takes any number of arguments is said to be variadic.} Formal parameters are bound if they're present; otherwise they're \verb|undefined|.
     For example:
 
@@ -272,7 +272,7 @@ begin
     g (null, false, undefined)  // => 3
     :.
 
-    {\em The \verb|arguments| keyword is not an array!} It just looks like one. In particular, doing any of these will cause problems:
+    {\it The {\tt arguments} keyword is not an array!} It just looks like one. In particular, doing any of these will cause problems:
 
     ::
     arguments.concat ([1, 2, 3])
@@ -306,7 +306,7 @@ begin
 
   - The meaning of {\tt this} (the egregious disaster)
     One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and JavaScript makes it look nearly impossible. Outside of functions (in
-    the global scope, that is), the word \verb|this| refers to the {\em global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
+    the global scope, that is), the word \verb|this| refers to the {\it global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
     is determined entirely by how the function is called. Here's how that works:
     
     e[
@@ -411,7 +411,7 @@ begin
     :.
 
     \noindent results in \verb|x| being \verb|undefined|. If you're likely to make this slip, there's an Emacs mode called ``js2-mode'' that identifies functions with no side-effects or return
-    values, and it will catch most of these errors.\footnote{Of course, that's if you're an Emacs person. If you prefer a {\em real} editor (wink), I wrote a custom JS highlighter that handles
+    values, and it will catch most of these errors.\footnote{Of course, that's if you're an Emacs person. If you prefer a {\it real} editor (wink), I wrote a custom JS highlighter that handles
     some cases better than the builtin one: \url{http://github.com/spencertipping/js-vim-highlighter}.}
 
   - {\tt var}
@@ -485,7 +485,7 @@ begin
     '1'   == 1
     :.
 
-    So, {\em never use the \verb|==| operator unless you really want this behavior}. Instead, use \verb|===| (whose complement is \verb|!==|), which behaves sensibly. In particular, \verb|===|
+    So, {\it never use the {\tt ==} operator unless you really want this behavior}. Instead, use \verb|===| (whose complement is \verb|!==|), which behaves sensibly. In particular, \verb|===|
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
     is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
@@ -529,7 +529,7 @@ begin
     options.foo = options.foo || 5;
     :.
 
-    Also, the language will convert {\em anything} to a string or number if you use \verb|+|. All of these expressions are strings:
+    Also, the language will convert {\it anything} to a string or number if you use \verb|+|. All of these expressions are strings:
 
     ::
     null + [1, 2]             // => 'null1,2'
@@ -587,7 +587,7 @@ begin
     }
     :.
 
-  - Don't use {\tt typeof}
+  - Be careful with {\tt typeof}
     Because it behaves like this:
 
     ::
@@ -598,7 +598,8 @@ begin
     typeof typeof             // hangs forever in Firefox
     :.
 
-    {\tt typeof} is a really lame way to detect the type of something. Better is to use an object's \verb|constructor| property, like this:
+    {\tt typeof} is a really lame way to detect the type of something in many cases.\footnote{And because it returns a string, it's marginally slower than using {\tt .constructor}.} Better is
+    to use an object's \verb|constructor| property, like this:
 
     ::
     (function () {}).constructor      // => Function
@@ -646,7 +647,7 @@ begin
 - Prototypes
   \label{sec:prototypes}
   I used to have a very anti-OOP comment here, but considering that I occasionally use prototypes for things I removed it. Despite my vendetta against JavaScript's blatant linguistic
-  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\em Java}Script, despite all of the dissimilarities.} prototype-based programming can be useful on
+  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\it Java}Script, despite all of the dissimilarities.} prototype-based programming can be useful on
   occasion. This section contains my subjective and biased view of it.
 
   Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
@@ -679,7 +680,7 @@ begin
 
   ::
   var x = 5;
-  new x.constructor ();     // Creates a boxed version of x
+  new x.constructor ();     // Creates a boxed version of x, regardless of what x is
   new new Function('x', 'this.x = 5');
   :.
 
@@ -696,13 +697,30 @@ begin
 
   You can find tons of information about this kind of prototype programming online.
 
+  - Why {\tt new} is awful
+    {\tt new} has some cool features (such as being first-class), but it has a really horrible shortcoming. Most functions in Javascript can be {\it forwarded} -- that is, you can write a new
+    function to wrap an existing one and the function being called will never know the difference. For example:
+
+    ::
+    var to_be_wrapped = function (x) {return x + 1};
+    var wrapper       = function () {
+      return to_be_wrapped.apply (this, arguments);
+    };
+    // for all x, wrapper(x) === to_be_wrapped(x)
+    :.
+
+    However, {\tt new} has no such mechanism. You can't forward a constructor in the general case, because {\tt new} has no equivalent of {\tt apply}. (Though this isn't the whole story -- see
+    section \ref{sec:forwarding-constructors} for a \sout{way} hack to do it.)
+
   - Why you should use prototypes
     If you need a dynamic-dispatch pattern, then prototypes are probably your best bet and you should use them rather than a roll-your-own approach. Google's V8 has a bunch of
     prototype-specific optimizations, as do later releases of Firefox. Also, prototypes save memory; having a pointer to a prototype is much cheaper than having $n$ pointers to $n$ attributes.
 
-    If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake. I have found prototypes to be an effective way to program in
-    JavaScript, but inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for
-    instance, is enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model.
+    If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake.\footnote{OK, I'm being biased about this point. I tend to treat
+    Javascript more like Scheme than like Smalltalk, so I don't think much in terms of classical object-oriented modeling. Also, since closures are really fast, it's OK to use functional
+    abstraction instead of inheritance. Javascript tends to be better suited to metaprogramming than inheritance.} I have found prototypes to be an effective way to program in JavaScript, but
+    inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for instance, is
+    enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model.
 
   - Autoboxing
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
@@ -726,6 +744,7 @@ begin
     :.
 
 - A Really Awesome Equality
+  \label{sec:a-really-awesome-equality}
   There is something really important about JavaScript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
   \verb|foo['bar']|. You could safely make this transformation to your code ahead of time, whether on value-properties, methods, or anything else. By extension, you can assign non-identifier
   things to object properties:
@@ -762,8 +781,8 @@ begin
 
   To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
   and second, use \verb|hasOwnProperty|:\footnote{OK, so you're probably wondering why we don't see the {\tt hasOwnProperty} method from a {\tt for ... in} loop, since it's obviously a
-  property. The reason is that JavaScript's attributes themselves have attributes (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for
-  some attribute, then a {\tt for ... in} loop will not enumerate it. JavaScript doesn't provide a way to set the {\tt DontEnum} attribute on anything you add to a prototype, so using {\tt
+  property. The reason is that JavaScript's attributes have invisible flags (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for some
+  attribute, then a {\tt for ... in} loop will not enumerate it. JavaScript doesn't provide a way to set the {\tt DontEnum} flag on anything you add to a prototype, so using {\tt
   hasOwnProperty} is a good way to prevent looping over other people's prototype extensions. Note that it fails sometimes on IE6; I believe it always returns false if the prototype supplies an
   attribute of the same name.}
 
@@ -774,10 +793,36 @@ begin
   properties          // => []
   :.
 
-  In particular, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which causes problems) or strings.
+  And very importantly, never use \verb|for ... in| to iterate through arrays (it returns string indices, not numbers, which can cause problems) or strings. Either of these will fail if you
+  add methods to {\tt Array} or {\tt String} (or {\tt Object}, but you shouldn't do that).
 
 - If You Have 20 Minutes...
   JavaScript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
+
+  - Forwarding constructors
+    \label{sec:forwarding-constructors}
+    I mentioned earlier that constructors can't be forwarded. That isn't exactly true. You can use this egregious hack (which is actually kind of beautiful in a don't-try-this-at-home sort of
+    way):\footnote{In general, anytime you run into something that's ``impossible'' in Javascript, you have a \sout{technique} hack at your disposal. The sledgehammer is {\tt eval}, which lets
+    you do anything.}
+
+    ::
+    var ctor = ...;     // we want to wrap this
+    var wrapper = function () {
+      var params = /^function\s*\(([^)]*)\)/.exec (ctor.toString());
+      if (params) {
+        var unlikely = '_' + (Math.random() << 20).toString(36);
+        eval ('var ' + unlikely + ' = ctor;');
+        var f = eval (                           // fails on IE6
+          'function (' + params[1] + ') {' +
+            'return new ' + unlikely + ' (' + params[1] + ');' +
+          '}');
+        return f.apply (this, arguments);
+      }
+    };
+    :.
+
+    Now you can say {\tt wrapper(x, y, ...)} and it will be translated into {\tt new ctor(x, y, ...)} -- and because {\tt wrapper} is just a regular function, you can call its {\tt apply}
+    method to give it an array of arguments.
 
   - Iterators for cool people
     Because languages like Ruby showed the world just how pass\'e \verb|for| loops really are, a lot of self-respecting functional programmers don't like to use them. If you're on Firefox, you
@@ -904,14 +949,16 @@ begin
     :.
 
     The advantage of using metaclasses is that you can do fun stuff with their structure. For example, suppose that we want to insert method tracing into all of our points for debugging
-    purposes:
+    purposes:\footnote{The example here used to contain the expression {\tt arguments.join}, which is invalid -- {\tt arguments} isn't an array. Now it uses the ``pretend this is an array for
+    the purposes of calling {\tt join} on it'' idiom, which usually works. (Though you'll sometimes get errors about methods not being generalized, as is the case on Chrome if you try to use
+    {\tt Array.prototype.toString()} this way.)}
 
     ::
     keys (point.methods).each (function (k) {
       var original = point.methods[k];
       point.methods[k] = function () {
-        trace ('Calling method ' + k +
-          ' with arguments ' + arguments.join (', '));
+        trace ('Calling method ' + k + ' with arguments ' +
+               Array.prototype.join.call (arguments, ', '));
         return original.apply (this, arguments);
       };
     });
@@ -1097,7 +1144,7 @@ begin
   I highly recommend reading jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by
   pawing around through it.
 
-  Douglas Crockford has written some excellent JavaScript references, including the well-known {\em JavaScript: The Good Parts} and a less-well-known but free online tour of the language at
+  Douglas Crockford has written some excellent JavaScript references, including the well-known {\it JavaScript: The Good Parts} and a less-well-known but free online tour of the language at
   \url{http://javascript.crockford.com/survey.html}.\footnote{There are some discrepancies between his view of JavaScript and mine. Neither is incorrect, there are just different unstated
   assumptions. For example, when he says that there are three primitives he is correct; he counts types by the number of unboxed representations, whereas I count them by the number of literal
   constructors.}
@@ -1107,14 +1154,14 @@ begin
   
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
-__iElZsJiWCbudc2lNPkjucgNYFD4+Q2LmqlFhbbCcudw
+__KXFhxqMo//xqtftpU/wTMx4J7jeRVJU5AifjcMl4KIE
 
-meta::data('header', <<'__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s');
+meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
-\usepackage{amsmath,amssymb,pxfonts}
+\usepackage{amsmath,amssymb,pxfonts,ulem}
 \usepackage[utf8]{inputenc}
 \usepackage[colorlinks]{hyperref}
-__zeSfCVl2tCsALl6XJBVoCjly+0q5x42jmqiSdpxQE9s
+__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY
 
 meta::data('intro', <<'__uirjwqAxCBH+vu23aaPBO6uNM7a7cUHAYKJo8gIJsGw');
 This is a TeX document generator.
@@ -1186,9 +1233,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__o4oalMiZ+Hg3VjG2UbWyCUYoQe9VgyhUqYQT8cyomIs');
-/tmp/js-in-ten-minutes.zaSCWRikYXg9fB0VGSiP76+-ROpEcxmYF8aFUHurPx4/document.pdf
-__o4oalMiZ+Hg3VjG2UbWyCUYoQe9VgyhUqYQT8cyomIs
+meta::data('pdf-output-file', <<'__lT/S8fP6F+GOrOWolMtvU+lJvMdsQHYi6ThKPA9gI1A');
+/tmp/js-in-ten-minutes.qKH0jKMwr4IzqV6osTu0n8kuOUJBQDSsz26AxiBX62M/document.pdf
+__lT/S8fP6F+GOrOWolMtvU+lJvMdsQHYi6ThKPA9gI1A
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
