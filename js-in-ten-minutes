@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__KXFhxqMo//xqtftpU/wTMx4J7jeRVJU5AifjcMl4KIE');
+meta::data('document', <<'__U0cbl6eXotK4FHTT7aJwX8mJk9EDq0M083CyEp2631Q');
 = JavaScript in Ten Minutes
 a Spencer Tipping
 begin
@@ -1154,7 +1154,9 @@ begin
   
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
-__KXFhxqMo//xqtftpU/wTMx4J7jeRVJU5AifjcMl4KIE
+
+  Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read.
+__U0cbl6eXotK4FHTT7aJwX8mJk9EDq0M083CyEp2631Q
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1233,9 +1235,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__lT/S8fP6F+GOrOWolMtvU+lJvMdsQHYi6ThKPA9gI1A');
-/tmp/js-in-ten-minutes.qKH0jKMwr4IzqV6osTu0n8kuOUJBQDSsz26AxiBX62M/document.pdf
-__lT/S8fP6F+GOrOWolMtvU+lJvMdsQHYi6ThKPA9gI1A
+meta::data('pdf-output-file', <<'__q7RCRkQCc0+zyfHYyeGujTJl7Dg7uR4f8WUxMuo9OIY');
+/tmp/js-in-ten-minutes.ssixpRl-EFQBpKGDNWgASon7DivDd8I7qEyGffvbdjI/document.pdf
+__q7RCRkQCc0+zyfHYyeGujTJl7Dg7uR4f8WUxMuo9OIY
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
