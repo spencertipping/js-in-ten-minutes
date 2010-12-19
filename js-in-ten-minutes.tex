@@ -2,33 +2,34 @@
 \usepackage{amsmath,amssymb,pxfonts,ulem}
 \usepackage[utf8]{inputenc}
 \usepackage[colorlinks]{hyperref}
-\title{JavaScript in Ten Minutes}
+\title{Javascript in Ten Minutes}
 \author{Spencer Tipping}
 \begin{document}\maketitle\tableofcontents
 
 \newpage
 \section {Introduction}
-  This guide is for anyone who knows some JavaScript but would like a quick intro to its advanced features. It will be easier reading if you also know another functional language such as Ruby,
-  Perl, Python, ML, Scheme, etc, since I don't really explain how first-class functions work.
+  This guide is for anyone who knows some Javascript but would like a quick\footnote{Longer than ten minutes, despite what the title says.} intro to its advanced features. It will be easier
+  reading if you also know another functional language such as Ruby, Perl, Python, ML, Scheme, etc, since I don't really explain how first-class functions work.
 
 \section {Types}
-  JavaScript has nine types. They are:
+  Javascript has nine types. They are:
 
 \begin{enumerate}
 \item Null -- \verb|null|. Chucks a wobbly if you ask it for any attributes; e.g.~\verb|null.foo| fails. Never boxed.\footnote{Boxing is just a way of saying whether something has a pointer. A
-      boxed type is a reference type, and an unboxed type is a value type. In JavaScript, this has additional ramifications as well -- see section \ref{sec:boxing}.}
+      boxed type is a reference type, and an unboxed type is a value type. In Javascript, this has additional ramifications as well -- see section \ref{sec:boxing}.}
 \item Undefined -- \verb|undefined|. What you get if you ask an object for something it doesn't have; e.g.~\verb|document.nonexistent|. Also chucks a wobbly if you ask it for any attributes.
       Never boxed.
-\item Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String|.
-\item Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number|.
-\item Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean|.
+\item Strings -- e.g. \verb|'foo'|, \verb|"foo"| (single vs. double quotation marks makes no difference). Sometimes boxed. Instance of \verb|String| when boxed.
+\item Numbers -- e.g. \verb|5|, \verb|3e+10| (all numbers behave as floats -- significant for division, but can be truncated by \verb|x >>> 0|). Sometimes boxed. Instance of \verb|Number| when
+      boxed.
+\item Booleans -- \verb|true| and \verb|false|. Sometimes boxed. Instance of \verb|Boolean| when boxed.
 \item Arrays -- e.g. \verb|[1, 2, "foo", [3, 4]]|. Always boxed. Instance of \verb|Array|.
 \item Objects -- e.g. \verb|{foo: 'bar', bif: [1, 2]}|, which are really just hashtables. Always boxed. Instance of \verb|Object|.
 \item Regular expressions -- e.g. \verb|/foo\s*([bar]+)/|. Always boxed. Instance of \verb|RegExp|.
 \item Functions -- e.g. \verb|function (x) {return x + 1}|. Always boxed. Instance of \verb|Function|.
 \end{enumerate}
 
-  The value \verb|null| is actually almost never produced by JavaScript. The only case you're likely to run across \verb|null| is if you assign it somewhere (most of the time you'll get
+  The value \verb|null| is actually almost never produced by Javascript. The only case you're likely to run across \verb|null| is if you assign it somewhere (most of the time you'll get
   \verb|undefined| instead -- one notable exception is \verb|document.getElementById|, which returns \verb|null| if it can't find an element). Making sparing use of \verb|undefined| and
   instead using \verb|null| can make bugs much easier to track down.
 
@@ -76,20 +77,22 @@ var f = function () {return f};
 f () === f              // => true
 \end{verbatim}
 
-    \noindent\verb|<hacker-stuff>| Another nice thing is that you can create functions that refer to variables that might never exist. (Some people would consider this a non-feature.) This
-    means that JavaScript can be made to support syntactic macros via the \verb|toString| method:
+    \begin{quote}
+      {\bf Tidbit of pathology:} An important consequence of lazy scoping is that you can create functions that refer to variables that might never exist. This makes Javascript very difficult
+      to debug. The good part is that Javascript can be made to support syntactic macros via the \verb|toString| method:
 
 \begin{verbatim}
 var f = function () {return $0 + $1};
 var g = eval (f.toString ().replace (/\$(\d+)/g,
           function (_, digits) {return 'arguments[' + digits + ']'}));
-g (5, 6)        // => 11
+g (5, 6)        // => 11 (except on IE)
 \end{verbatim}
 
-    Theoretically by extending this principle one could implement true structural macros, operator overloading, a type system,\footnote{God forbid.} or other things.\verb|</hacker-stuff>|
+      Theoretically by extending this principle one could implement true structural macros, operator overloading, a type system,\footnote{God forbid.} or other things.
+    \end{quote}
 
 \subsection {The meaning of {\tt this} (the egregious disaster)}
-    One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and JavaScript makes it look nearly impossible. Outside of functions (in
+    One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and Javascript makes it look nearly impossible. Outside of functions (in
     the global scope, that is), the word \verb|this| refers to the {\it global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
     is determined entirely by how the function is called. Here's how that works:
     
@@ -117,7 +120,7 @@ f.call (null)       // => [object global]
 \end{verbatim}
 \end{enumerate}
 
-    Given this unpredictability, most JavaScript libraries provide a facility to set a function's \verb|this| binding (referred to within JavaScript circles as just a function's binding)
+    Given this unpredictability, most Javascript libraries provide a facility to set a function's \verb|this| binding (referred to within Javascript circles as just a function's binding)
     to something invocation-invariant. The easiest way to do this is to define a function that proxies arguments using \verb|apply| and closes over the proper value (luckily, closure
     variables behave normally):
 
@@ -133,7 +136,7 @@ var bind = function (f, this_value) {
 
 \subsubsection {Important consequence: eta-reduction}
       In most functional programming languages, you can eta-reduce things; that is, if you have a function of the form \verb|function (x) {return f (x)}|, you can just use \verb|f| instead.
-      But in JavaScript that's not always a safe transformation; consider this code:
+      But in Javascript that's not always a safe transformation; consider this code:
 
 \begin{verbatim}
 Array.prototype.each = function (f) {
@@ -151,7 +154,7 @@ some_array.each (function (x) {xs.push (x)});
 some_array.each (xs.push);
 \end{verbatim}
 
-      \noindent however this latter form will result in a mysterious JavaScript error when the native \verb|Array.push| function finds \verb|this| to be the global object instead of \verb|xs|.
+      \noindent however this latter form will result in a mysterious Javascript error when the native \verb|Array.push| function finds \verb|this| to be the global object instead of \verb|xs|.
       The reason should be apparent: when the function is called inside \verb|each|, it is invoked as a function instead of a method. The fact that the function started out as a method on
       \verb|xs| is forgotten. (Just like case \ref{itm:forget} above.)
 
@@ -162,23 +165,23 @@ some_array.each (bind (xs.push, xs));
 \end{verbatim}
 
 \section {Gotchas}
-  JavaScript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
-  trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of JavaScript's
-  linguistic pathology.\footnote{There is plenty of this pathology despite JavaScript being generally an excellent language. This makes it ideal both for people who want to get things done,
+  Javascript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
+  trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of Javascript's
+  linguistic pathology.\footnote{There is plenty of this pathology despite Javascript being generally an excellent language. This makes it ideal both for people who want to get things done,
   and for bug-connoisseurs such as myself.}
 
 \subsection {Semicolon inference}
     You won't run into any trouble if you always end lines with semicolons. However, most browsers consider it to be optional, and there is one potential surprise lurking if you choose to omit
     them.
 
-    Most of the time JavaScript does what you mean. The only case where it might not is when you start a line with an open-paren, like this:
+    Most of the time Javascript does what you mean. The only case where it might not is when you start a line with an open-paren, like this:
 
 \begin{verbatim}
 var x = f
 (y = x) (5)
 \end{verbatim}
 
-    JavaScript joins these two lines, forming:
+    Javascript joins these two lines, forming:
 
 \begin{verbatim}
 var x = f (y = x) (5)
@@ -221,17 +224,17 @@ for (var k in some_object)    // k is local to the function
     This is a beautiful disaster. Check this out:
 
 \begin{verbatim}
-var x = {};
+var x = [];
 for (var i = 0; i < 3; ++i)
-  x['fn' + i] = function () { return i; };
+  x[i] = function () { return i; };
 
-x.fn0();  // What will these be?
-x.fn1();
-x.fn2();
+x[0]();  // What will these be?
+x[1]();
+x[2]();
 \end{verbatim}
 
     What will our three functions return when they are eventually called? You might expect them to return 0, 1, and 2, respectively, since those were the values of \verb|i| when they were
-    created. However they will actually all return 3. This is because of JavaScript's lazy scoping: Upon creation, each function receives only a variable name and a scope in which to search
+    created. However they will actually all return 3. This is because of Javascript's lazy scoping: Upon creation, each function receives only a variable name and a scope in which to search
     for it; the value itself is not resolved until the time of invocation, at which point \verb|i| will equal 3.
 
     The simplest way to fix this is to wrap our assignment in an anonymous function that is evaluated immediately, introducing another layer of scope. The following code works because within
@@ -240,7 +243,7 @@ x.fn2();
 \begin{verbatim}
 for (var i = 0; i < 3; ++i)
   (function (new_i) {
-    x['fn' + new_i] = function () { return new_i; };
+    x[new_i] = function () { return new_i; };
   })(i);
 \end{verbatim}
 
@@ -249,15 +252,15 @@ for (var i = 0; i < 3; ++i)
 \begin{verbatim}
 for (var i = 0; i < 3; ++i) {
   var j = i;
-  x['fn' + j] = function () { return j; };
+  x[j] = function () { return j; };
 }
 \end{verbatim}
 
-    This won't work for same reason that our original example failed: \verb|j| will be scoped to the nearest enclosing function (remember that JavaScript's scoping is function level, not block
-    level!), so its value is changing just as frequently as that of \verb|i|'s.
+    This won't work for same reason that our original example failed: \verb|j| will be scoped to the nearest enclosing function (remember that Javascript's scoping is function level, not block
+    level!), so its value is changing just as frequently as \verb|i|'s.
 
 \subsection {Equality}
-    Because the \verb|==| is lame, these are all true in JavaScript:
+    Because the \verb|==| is lame, these are all true in Javascript:
 
 \begin{verbatim}
 null  == undefined
@@ -273,9 +276,15 @@ true  == '1'
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
     is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
+    \begin{quote}
+      {\bf Tidbit of pathology:} It turns out that {\tt ==} isn't even stable under truthiness. If {\tt x = 0} and {\tt y = new Number(0)}, then {\tt x == y}, {\tt !!x} is {\tt false}, and
+      {\tt !!y} is {\tt true}. Section \ref{sec:boxing} talks more about why this kind of thing happens.
+    \end{quote}
+
 \subsection {Boxed vs.~unboxed}
     \label{sec:boxing}
-    Boxed values can store properties. Unboxed values will silently fail to store them; for example:
+    Boxed values are always truthy and can store properties. Unboxed values will silently fail to store them; for example:\footnote{There are other consequences of boxing; see sections
+    \ref{sec:careful-with-typeof} and \ref{sec:careful-with-instanceof} for some examples.}
 
 \begin{verbatim}
 var x = 5;
@@ -297,7 +306,7 @@ x.foo     // => 'bar'; x is a pointer.
     All HTML objects, whether or not they're somehow native, will be boxed.
 
 \subsection {Things that will silently fail or misbehave}
-    JavaScript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
+    Javascript is very lenient about what you can get away with. In particular, the following are all perfectly legal:
 
 \begin{verbatim}
 [1, 2, 3].foo     // => undefined
@@ -342,10 +351,10 @@ true / null                                       // => Infinity
 \end{verbatim}
 
 \subsection {Things that will loudly fail}
-    There is a point where JavaScript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
+    There is a point where Javascript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
     exist,\footnote{To get around the error for this case, you can say {\tt typeof foo}, where {\tt foo} is the potentially nonexistent global. It will return {\tt 'undefined'} if
-    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then JavaScript will throw a \verb|TypeError| or \verb|ReferenceError|. By extension, referring to local variables
-    that don't exist causes a \verb|ReferenceError|, since JavaScript thinks you're talking about a global variable.
+    {\tt foo} hasn't been defined (or contains the value {\tt undefined}).} then Javascript will throw a \verb|TypeError| or \verb|ReferenceError|. By extension, referring to local variables
+    that don't exist causes a \verb|ReferenceError|, since Javascript thinks you're talking about a global variable.
 
 \subsection {Throwing things}
     You can \verb|throw| a lot of different things, including unboxed values. This can have some advantages; in this code for instance:
@@ -372,6 +381,7 @@ try {
 \end{verbatim}
 
 \subsection {Be careful with {\tt typeof}}
+    \label{sec:careful-with-typeof}
     Because it behaves like this:
 
 \begin{verbatim}
@@ -408,6 +418,37 @@ x === null || x === undefined ? x : x.constructor
     Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.\footnote{Well, almost. If you ask for
     it by putting {\tt null}, {\tt undefined}, or similarly inappropriate things on the right-hand side you'll get a {\tt TypeError}.}
 
+\subsection {Also be careful with {\tt instanceof}}
+    \label{sec:careful-with-instanceof}
+    {\tt instanceof} is generally more useful than {\tt typeof}, but it only works with boxed values. For example, these are all false:
+
+\begin{verbatim}
+3 instanceof Number
+'foo' instanceof String
+true instanceof Boolean
+\end{verbatim}
+
+    \noindent However, these are all true:
+
+\begin{verbatim}
+[] instanceof Array
+({}) instanceof Object
+[] instanceof Object        // Array inherits from Object
+/foo/ instanceof RegExp     // regular expressions are always boxed
+(function () {}) instanceof Function
+\end{verbatim}
+
+    One way to work around the first problem is to wrap primitives:
+
+\begin{verbatim}
+new Number(3) instanceof Number             // true
+new String('foo') instanceof String         // also true
+new Boolean(true) instanceof Boolean        // also true
+\end{verbatim}
+
+    In general, {\tt (new x.constructor(x) instanceof x.constructor)} will be true for all primitive {\tt x}. However, this doesn't hold for {\tt null} or {\tt undefined}. These will throw
+    errors if you ask for their constructors, and as far as I know are never returned from the result of a constructor invocation (using {\tt new}, that is).
+
 \subsection {Browser incompatibilities}
     Generally browsers since IE6 have good compatibility for core language stuff. One notable exception, however, is an IE bug that affects \verb|String.split|:
 
@@ -425,13 +466,13 @@ f()         // on reasonable browsers: 5
 f()         // on IE6: 'Object expected' (because f is undefined)
 \end{verbatim}
 
-    I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a JavaScript
+    I'm sure there are other similar bugs out there, though the most common ones to cause problems are generally in the DOM.\footnote{jQuery is your friend here. It's branded as a Javascript
     library, but in fact it's a set of enhancements to the DOM to (1) achieve a uniform cross-browser API, and (2) make it easier to retrieve and manipulate nodes.}
 
 \section {Prototypes}
   \label{sec:prototypes}
-  I used to have a very anti-OOP comment here, but considering that I occasionally use prototypes for things I removed it. Despite my vendetta against JavaScript's blatant linguistic
-  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\it Java}Script, despite all of the dissimilarities.} prototype-based programming can be useful on
+  I used to have a very anti-OOP comment here, but considering that I occasionally use prototypes I removed it. Despite my obvious and probably unfair vendetta against Javascript's linguistic
+  compromises to pander to Java-inspired marketing pressure,\footnote{Hence its name, {\it Java}script, despite all of the dissimilarities.} prototype-based programming can be useful on
   occasion. This section contains my subjective and biased view of it.
 
   Whenever you define a function, it serves two purposes. It can be what every normal programmer assumes a function is -- that is, it can take values and return values, or it can be a
@@ -443,7 +484,7 @@ var f = function (x) {return x + 1};
 f (5)     // => 6
 \end{verbatim}
 
-  This is what most people expect. Here's the mutant behavior that almost nobody expects:
+  This is what most people expect. Here's the mutant behavior that no rational person would ever imagine:
 
 \begin{verbatim}
 // A constructor function
@@ -502,9 +543,9 @@ var wrapper       = function () {
 
     If, on the other hand, you find yourself implementing actual inheritance hierarchies, then you're probably making a mistake.\footnote{OK, I'm being biased about this point. I tend to treat
     Javascript more like Scheme than like Smalltalk, so I don't think much in terms of classical object-oriented modeling. Also, since closures are really fast, it's OK to use functional
-    abstraction instead of inheritance. Javascript tends to be better suited to metaprogramming than inheritance.} I have found prototypes to be an effective way to program in JavaScript, but
-    inheritance in JavaScript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for instance, is
-    enormous.} and (2) poorly representative of JavaScript's ``everything is public'' model.
+    abstraction instead of inheritance. Javascript tends to be better suited to metaprogramming than inheritance.} I have found prototypes to be an effective way to program in Javascript, but
+    inheritance in Javascript is (1) slow,\footnote{In some cases really slow. The difference between single-level and multiple-level prototype lookups in Firefox 3.5, for instance, is
+    enormous.} and (2) poorly representative of Javascript's ``everything is public'' model.
 
 \subsection {Autoboxing}
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
@@ -529,7 +570,7 @@ function (rhs) {return !! this.valueOf () !== !! rhs};
 
 \section {A Really Awesome Equality}
   \label{sec:a-really-awesome-equality}
-  There is something really important about JavaScript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
+  There is something really important about Javascript that isn't at all obvious from the way it's used. It is this: The syntax \verb|foo.bar| is, in all situations, identical to
   \verb|foo['bar']|. You could safely make this transformation to your code ahead of time, whether on value-properties, methods, or anything else. By extension, you can assign non-identifier
   things to object properties:
 
@@ -565,8 +606,8 @@ properties          // => ['foo']
 
   To get around this, you should do two things. First, never modify \verb|Object|'s prototype, since everything is an instance of \verb|Object| (including arrays and all other boxed things);
   and second, use \verb|hasOwnProperty|:\footnote{OK, so you're probably wondering why we don't see the {\tt hasOwnProperty} method from a {\tt for ... in} loop, since it's obviously a
-  property. The reason is that JavaScript's attributes have invisible flags (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for some
-  attribute, then a {\tt for ... in} loop will not enumerate it. JavaScript doesn't provide a way to set the {\tt DontEnum} flag on anything you add to a prototype, so using {\tt
+  property. The reason is that Javascript's attributes have invisible flags (as defined by the ECMAScript standard), one of which is called {\tt DontEnum}. If {\tt DontEnum} is set for some
+  attribute, then a {\tt for ... in} loop will not enumerate it. Javascript doesn't provide a way to set the {\tt DontEnum} flag on anything you add to a prototype, so using {\tt
   hasOwnProperty} is a good way to prevent looping over other people's prototype extensions. Note that it fails sometimes on IE6; I believe it always returns false if the prototype supplies an
   attribute of the same name.}
 
@@ -581,7 +622,7 @@ properties          // => []
   add methods to {\tt Array} or {\tt String} (or {\tt Object}, but you shouldn't do that).
 
 \section {If You Have 20 Minutes...}
-  JavaScript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
+  Javascript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
 
 \subsection {Forwarding constructors}
     \label{sec:forwarding-constructors}
@@ -628,10 +669,10 @@ Array.prototype.map = Array.prototype.map || function (f) {
 };
 \end{verbatim}
 
-    As far as I know this is (almost) the fastest way to write these functions. We declare two variables up-front (\verb|i| and \verb|l|) so that the length is cached; JavaScript won't know
+    As far as I know this is (almost) the fastest way to write these functions. We declare two variables up-front (\verb|i| and \verb|l|) so that the length is cached; Javascript won't know
     that \verb|this.length| is invariant with the \verb|for| loop, so it will check it every time if we fail to cache it. This is expensive because due to boxing we'd have a failed hash-lookup
     on \verb|this| that then dropped down to \verb|this.__proto__|, where it would find the special property \verb|length|. Then, a method call would happen to retrieve
-    \verb|length|.\footnote{This gets into how JavaScript presents certain APIs. Internally it has a notion of gettable and settable properties, though there isn't a cross-browser way to
+    \verb|length|.\footnote{This gets into how Javascript presents certain APIs. Internally it has a notion of gettable and settable properties, though there isn't a cross-browser way to
     create them. But properties such as {\tt length}, {\tt childNodes}, etc.~are all really method calls and not field lookups. (Try assigning to one and you'll see.)}
 
     The only further optimization that could be made is to go through the array backwards (which only works for \verb|each|, since \verb|map| is assumed to preserve order):
@@ -644,8 +685,8 @@ Array.prototype.each = function (f) {
 \end{verbatim}
 
     This ends up being very slightly faster than the first implementation because it changes a floating-point subtraction (required to evaluate \verb|<| for non-zero quantities) into a sign
-    check, which internally is a bitwise \verb|and| and a zero-predicated jump. Unless your JavaScript engine inlines functions and you're really determined to have killer performance (at
-    which point I would ask why you're using JavaScript in the first place), you probably never need to consider the relative overhead of a non-zero \verb|<| vs.~a zero \verb|>=|.
+    check, which internally is a bitwise \verb|and| and a zero-predicated jump. Unless your Javascript engine inlines functions and you're really determined to have killer performance (at
+    which point I would ask why you're using Javascript in the first place), you probably never need to consider the relative overhead of a non-zero \verb|<| vs.~a zero \verb|>=|.
 
     You can also define an iterator for objects, but not like this:
 
@@ -668,7 +709,7 @@ var keys = function (o) {
 
 \subsection {Java classes and interfaces}
     No sane person would ever want to use these. But if you're insane or are being forced to, then the Google Web Toolkit will give you a way to shoot yourself in the foot and turn it into
-    JavaScript.
+    Javascript.
 
 \subsection {Recursive metaclasses}
     There are different ways to approach this, but a straightforward way is to do something like this:\footnote{Remember that a class is just a function that produces instances. Nothing about
@@ -748,12 +789,12 @@ keys (point.methods).each (function (k) {
 });
 \end{verbatim}
 
-    Now \verb|trace| (which isn't a JavaScript built-in, so you'd have to define it) would be called each time any method of a \verb|point| instance was called, and it would have access to
+    Now \verb|trace| (which isn't a Javascript built-in, so you'd have to define it) would be called each time any method of a \verb|point| instance was called, and it would have access to
     both the arguments and the state.
 
 \subsection {Tail calls and delimited continuations}
-    JavaScript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks (the shortest I'm aware of is 500 frames, which goes by especially
-    quickly when you have bound functions and iterators). Luckily, encoding tail calls in JavaScript is actually really simple:
+    Javascript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks (the shortest I'm aware of is 500 frames, which goes by especially
+    quickly when you have bound functions and iterators). Luckily, encoding tail calls in Javascript is actually really simple:
 
 \begin{verbatim}
 Function.prototype.tail = function () {return [this, arguments]};
@@ -878,7 +919,7 @@ var f = expand_where (function () {
 (foo some-expression)
 \end{verbatim}
 
-    \noindent becomes this in JavaScript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):\footnote{Real versions of these are implemented in
+    \noindent becomes this in Javascript (assuming the existence of \verb|parse| and \verb|deparse|, which are rather complicated):\footnote{Real versions of these are implemented in
     \url{http://github.com/spencertipping/caterwaul}, if you're interested to see what they look like. It's also a reasonable reference for syntactic edge cases.}
 
 \begin{verbatim}
@@ -909,7 +950,7 @@ Array.prototype['<<'] = function () {
 };
 \end{verbatim}
 
-    The only thing that's unfortunate about implementing this stuff in JavaScript rather than Lisp is that JavaScript bakes syntactic constructs into the grammar, so trying to introduce new
+    The only thing that's unfortunate about implementing this stuff in Javascript rather than Lisp is that Javascript bakes syntactic constructs into the grammar, so trying to introduce new
     syntactic forms such as \verb|when| isn't very convenient:
     
 \begin{verbatim}
@@ -920,7 +961,7 @@ expand_when (function () {
 });
 \end{verbatim}
 
-    But anything you can do inside the JavaScript parse tree is fair game.\footnote{Keep in mind that {\tt toString} will sometimes rewrite your function to standard form, so leveraging
+    But anything you can do inside the Javascript parse tree is fair game.\footnote{Keep in mind that {\tt toString} will sometimes rewrite your function to standard form, so leveraging
     ambiguities of the syntax isn't helpful. In Firefox, for example, writing expressions with excess parentheses is not useful because those excess parentheses are lost when you call {\tt
     toString}.}
 
@@ -928,8 +969,8 @@ expand_when (function () {
   I highly recommend reading jQuery (\url{http://jquery.com}) for the quality and conscientiousness of the codebase. It's a brilliant piece of work and I've learned a tremendous amount by
   pawing around through it.
 
-  Douglas Crockford has written some excellent JavaScript references, including the well-known {\it JavaScript: The Good Parts} and a less-well-known but free online tour of the language at
-  \url{http://javascript.crockford.com/survey.html}.\footnote{There are some discrepancies between his view of JavaScript and mine. Neither is incorrect, there are just different unstated
+  Douglas Crockford has written some excellent Javascript references, including the well-known {\it Javascript: The Good Parts} and a less-well-known but free online tour of the language at
+  \url{http://javascript.crockford.com/survey.html}.\footnote{There are some discrepancies between his view of Javascript and mine. Neither is incorrect, there are just different unstated
   assumptions. For example, when he says that there are three primitives he is correct; he counts types by the number of unboxed representations, whereas I count them by the number of literal
   constructors.}
 
