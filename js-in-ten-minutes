@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__GQ1m8GHFLauZA+bG+EL91xWouXytjBSo6RkVnlAOcPg');
+meta::data('document', <<'__cCG0AZ6x4/PNqNjnT3oLTKrh3WRhtxIoUIvKj0Si9jI');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -1196,8 +1196,10 @@ begin
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
 
-  Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read.
-__GQ1m8GHFLauZA+bG+EL91xWouXytjBSo6RkVnlAOcPg
+  Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
+  in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
+  don't know Javascript that well.
+__cCG0AZ6x4/PNqNjnT3oLTKrh3WRhtxIoUIvKj0Si9jI
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1276,9 +1278,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__qItFgfDGb/Wl0UdgdvzsYS0XSFG9WEfC6sQgSrf9sg0');
-/tmp/js-in-ten-minutes.pnj1fxua09AHsrcx30BZ9KTVXgB7eexofK96I8HvE70/document.pdf
-__qItFgfDGb/Wl0UdgdvzsYS0XSFG9WEfC6sQgSrf9sg0
+meta::data('pdf-output-file', <<'__tX4RMdNTbx0zsaCA11qghpdJflGRPkN0vy9lLx2iZKM');
+/tmp/js-in-ten-minutes.DSQfXjV7rTVRfAtmMFWyVInA2GHbg3oE+MrQQbTiR9w/document.pdf
+__tX4RMdNTbx0zsaCA11qghpdJflGRPkN0vy9lLx2iZKM
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
