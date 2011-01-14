@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__cCG0AZ6x4/PNqNjnT3oLTKrh3WRhtxIoUIvKj0Si9jI');
+meta::data('document', <<'__1tLikzGVhrOXIl7OlZHwKYvSG1Pzzn/OMyhOvJCFGwk');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -380,6 +380,20 @@ begin
       some_array.each (bind (xs.push, xs));
       :.
 
+    - Odd tidbit: {\tt this} is never falsy
+      \label{sec:this-is-never-falsy}
+      For reasons explained in section \ref{sec:boxing}, {\tt this} will never be set to a falsy value. If you try to set it to {\tt null} or {\tt undefined}, say by doing this:
+
+      ::
+      var f = function () {
+        return this;
+      };
+      f.call (null);    // returns null, right?
+      :.
+
+      \noindent it will in fact become the global {\tt this}, usually {\tt window} in the browser. If you use a falsy primitive, {\tt this} will refer to a boxed version of that primitive.
+      This has some counterintuitive consequences, covered in more detail in section \ref{sec:autoboxing}.
+
 - Gotchas
   Javascript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
   trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of Javascript's
@@ -492,6 +506,9 @@ begin
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
     is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
+    There is one case in particular where {\tt ==} is more useful than {\tt ===}. If you want to find out whether something has a property table (i.e.~isn't {\tt null} or {\tt undefined}), the
+    easiest way to go about it is {\tt (x == null)} rather than the more explicit \verb+(x === null || x === undefined)+. Apart from this I can't imagine using {\tt ==} very often.
+
     \begin{quote}
       {\bf Tidbit of pathology:} It turns out that {\tt ==} isn't even stable under truthiness. If {\tt x = 0} and {\tt y = new Number(0)}, then {\tt x == y}, {\tt !!x} is {\tt false}, and
       {\tt !!y} is {\tt true}. Section \ref{sec:boxing} talks more about why this kind of thing happens.
@@ -517,6 +534,7 @@ begin
     e[
       + Call its constructor directly, as we did above
       + Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
+      + Pass it as the first argument to a function's {\tt call} or {\tt apply} method (see section \ref{sec:this-is-never-falsy})
     ]e
 
     All HTML objects, whether or not they're somehow native, will be boxed.
@@ -625,10 +643,11 @@ begin
     x && x.constructor
     :.
 
-    But in fact that will fail for \verb|''|, \verb|0|, and \verb|false|. The only way I know to get around this is to just do the comparison:
+    But in fact that will fail for \verb|''|, \verb|0|, \verb|false|, \verb|NaN|, and possibly others. The only way I know to get around this is to just do the comparison:
 
     ::
     x === null || x === undefined ? x : x.constructor
+    x == null ? x : x.constructor       // same thing, but more concise
     :.
 
     Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.\footnote{Well, almost. If you ask for
@@ -764,6 +783,7 @@ begin
     enormous.} and (2) poorly representative of Javascript's ``everything is public'' model.
 
   - Autoboxing
+    \label{sec:autoboxing}
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
     returns either {\tt true} or {\tt false}.}
 
@@ -1199,7 +1219,7 @@ begin
   Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
   in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
   don't know Javascript that well.
-__cCG0AZ6x4/PNqNjnT3oLTKrh3WRhtxIoUIvKj0Si9jI
+__1tLikzGVhrOXIl7OlZHwKYvSG1Pzzn/OMyhOvJCFGwk
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1278,9 +1298,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__tX4RMdNTbx0zsaCA11qghpdJflGRPkN0vy9lLx2iZKM');
-/tmp/js-in-ten-minutes.DSQfXjV7rTVRfAtmMFWyVInA2GHbg3oE+MrQQbTiR9w/document.pdf
-__tX4RMdNTbx0zsaCA11qghpdJflGRPkN0vy9lLx2iZKM
+meta::data('pdf-output-file', <<'__Urq7YzSzq+kYzClKDRdsOhkm5sz3LfHeWgxEqEX6fEo');
+/tmp/js-in-ten-minutes.YbWNKWc1qAbwYLBkNbiK-dL9GvxD7KlKXDwDArXrVmw/document.pdf
+__Urq7YzSzq+kYzClKDRdsOhkm5sz3LfHeWgxEqEX6fEo
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince

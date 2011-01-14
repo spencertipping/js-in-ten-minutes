@@ -164,6 +164,20 @@ some_array.each (xs.push);
 some_array.each (bind (xs.push, xs));
 \end{verbatim}
 
+\subsubsection {Odd tidbit: {\tt this} is never falsy}
+      \label{sec:this-is-never-falsy}
+      For reasons explained in section \ref{sec:boxing}, {\tt this} will never be set to a falsy value. If you try to set it to {\tt null} or {\tt undefined}, say by doing this:
+
+\begin{verbatim}
+var f = function () {
+  return this;
+};
+f.call (null);    // returns null, right?
+\end{verbatim}
+
+      \noindent it will in fact become the global {\tt this}, usually {\tt window} in the browser. If you use a falsy primitive, {\tt this} will refer to a boxed version of that primitive.
+      This has some counterintuitive consequences, covered in more detail in section \ref{sec:autoboxing}.
+
 \section {Gotchas}
   Javascript is an awesome language just like Perl is an awesome language and Linux is an awesome operating system. If you know how to use it properly, it will solve all of your problems
   trivially (well, almost), and if you miss one of its subtleties you'll spend hours hunting down bugs. I've collected the things I've run into here, which should cover most of Javascript's
@@ -276,6 +290,9 @@ true  == '1'
     requires both operands to not only be the same-ish, but also be of the same type. It does referential comparison for boxed values and structural comparison for unboxed values. If one side
     is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
+    There is one case in particular where {\tt ==} is more useful than {\tt ===}. If you want to find out whether something has a property table (i.e.~isn't {\tt null} or {\tt undefined}), the
+    easiest way to go about it is {\tt (x == null)} rather than the more explicit \verb+(x === null || x === undefined)+. Apart from this I can't imagine using {\tt ==} very often.
+
     \begin{quote}
       {\bf Tidbit of pathology:} It turns out that {\tt ==} isn't even stable under truthiness. If {\tt x = 0} and {\tt y = new Number(0)}, then {\tt x == y}, {\tt !!x} is {\tt false}, and
       {\tt !!y} is {\tt true}. Section \ref{sec:boxing} talks more about why this kind of thing happens.
@@ -301,6 +318,7 @@ x.foo     // => 'bar'; x is a pointer.
 \begin{enumerate}
 \item Call its constructor directly, as we did above
 \item Set a member of its prototype and refer to \verb|this| inside that method (see section \ref{sec:prototypes})
+\item Pass it as the first argument to a function's {\tt call} or {\tt apply} method (see section \ref{sec:this-is-never-falsy})
 \end{enumerate}
 
     All HTML objects, whether or not they're somehow native, will be boxed.
@@ -409,10 +427,11 @@ null.constructor                  // TypeError: null has no properties
 x && x.constructor
 \end{verbatim}
 
-    But in fact that will fail for \verb|''|, \verb|0|, and \verb|false|. The only way I know to get around this is to just do the comparison:
+    But in fact that will fail for \verb|''|, \verb|0|, \verb|false|, \verb|NaN|, and possibly others. The only way I know to get around this is to just do the comparison:
 
 \begin{verbatim}
 x === null || x === undefined ? x : x.constructor
+x == null ? x : x.constructor       // same thing, but more concise
 \end{verbatim}
 
     Alternatively, if you just want to find out whether something is of a given type, you can just use \verb|instanceof|, which never throws an exception.\footnote{Well, almost. If you ask for
@@ -548,6 +567,7 @@ var wrapper       = function () {
     enormous.} and (2) poorly representative of Javascript's ``everything is public'' model.
 
 \subsection {Autoboxing}
+    \label{sec:autoboxing}
     You might be tempted to try something like this:\footnote{{\tt !!~x} is just an idiom to make sure that {\tt x} ends up being a boolean. It's a double-negation, and {\tt !}~always
     returns either {\tt true} or {\tt false}.}
 
