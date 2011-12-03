@@ -95,7 +95,7 @@ g (5, 6)        // => 11 (except on IE)
     One would think it is a simple matter to figure out what \verb|this| is, but it's apparently quite challenging, and Javascript makes it look nearly impossible. Outside of functions (in
     the global scope, that is), the word \verb|this| refers to the {\it global object}, which is \verb|window| in a browser. The real question is how it behaves inside a function, and that
     is determined entirely by how the function is called. Here's how that works:
-    
+
 \begin{enumerate}
 \item If the function is called alone, e.g.~\verb|foo(5)|, then inside that function's body the word \verb|this| will be equivalent to the global object.
 \item If the function is called as a method, e.g.~\verb|x.foo(5)|, then inside that function's body the word \verb|this| refers to the object, in this case \verb|x|.
@@ -291,7 +291,8 @@ true  == '1'
     is boxed and the other is unboxed, \verb|===| will always return false. Because string literals are unboxed, though, you can use it there: \verb|'foo' === 'fo' + 'o'|.
 
     There is one case in particular where {\tt ==} is more useful than {\tt ===}. If you want to find out whether something has a property table (i.e.~isn't {\tt null} or {\tt undefined}), the
-    easiest way to go about it is {\tt (x == null)} rather than the more explicit \verb+(x === null || x === undefined)+. Apart from this I can't imagine using {\tt ==} very often.
+    easiest way to go about it is {\tt (x == null)} rather than the more explicit \verb+(x === null || x === undefined)+. Apart from this I can't imagine using {\tt ==} very
+    often.\footnote{And, in fact, there are good security reasons not to do so; see section \ref{sec:numeric-coercion} for all the gory details.}
 
     \begin{quote}
       {\bf Tidbit of pathology:} It turns out that {\tt ==} isn't even stable under truthiness. If {\tt x = 0} and {\tt y = new Number(0)}, then {\tt x == y}, {\tt !!x} is {\tt false}, and
@@ -367,6 +368,102 @@ null * false + (true * false) + (true * true)     // => 1
 true << true << true                              // => 4
 true / null                                       // => Infinity
 \end{verbatim}
+
+\subsection {Numeric coercion}
+    \label{sec:numeric-coercion}
+    This one caught me off guard recently. Javascript's type coercions sometimes have inconsistent properties. For example:
+
+\begin{verbatim}
+{}                  // truthy
+!!{}                // coerce to boolean, truthy
++{}                 // coerce to number, NaN, which is falsy
+[]                  // truthy
+!![]                // coerce to boolean, truthy
++[]                 // coerce to number, 0, which is falsy
+
+[] == false         // true (because [] is really zero, or something)
+[] == 0             // true
+[] == ''            // true (because 0 == '')
+[] == []            // false (different references, no coercion)
+[1] == [1]          // false (different references, no coercion)
+[1] == +[1]         // true (right-hand side is number, coercion)
+\end{verbatim}
+
+    You need to watch out for things like this when you're using certain operators with non-numeric things. For example, this function will not tell you whether an array contains any truthy
+    values:
+
+\begin{verbatim}
+var has_truthy_stuff = function (xs) {
+  var result = 0;
+  for (var i = 0, l = xs.length; i < l; ++i)
+    result |= xs[i];
+  return !!result;
+};
+has_truthy_stuff([{}, {}, 0])       // returns false
+\end{verbatim}
+
+    The reason \verb|has_truthy_stuff| returns false is because when \verb|{}| is coerced to a number, it becomes {\tt NaN}, which is falsy in Javascript. Using \verb+|=+ with {\tt NaN} is
+    just like using it with {\tt 0}; nothing happens. So {\tt result} remains {\tt 0} for all values of the array, and the function fails.
+
+    By the way, you can change what numeric coercion does by (re)defining the {\tt valueOf} method:
+
+\begin{verbatim}
++{valueOf: function () {return 42}}         // -> 42
+Object.prototype.valueOf = function () {
+  return 15;
+};
+Array.prototype.valueOf = function () {
+  return 91;
+};
++{}                 // -> 15
++[]                 // -> 91
++[1]                // -> 91
+\end{verbatim}
+
+    It's worth thinking about this a little bit because it has some interesting implications. First, {\tt valueOf()} may not halt. For example:
+
+\begin{verbatim}
+Object.prototype.valueOf = function () {
+  while (true);
+};
+{} == 5             // never returns; {} is coerced to a number
++{}                 // never returns
+!{}                 // returns false; this bypasses valueOf()
+\end{verbatim}
+
+    Second, {\tt valueOf} is just a regular Javascript function, so it can create security holes. In particular, suppose you're using {\tt eval()} as a JSON parser (not a good idea, by the
+    way) and didn't check the input for well-formedness first. If someone sends you \verb|{valueOf: function () {while (true);}}|, then your app will hang the first time it coerces the object
+    to a number (and this coercion can be implicit, like the {\tt == 5} case above).
+
+    \begin{quote}
+      {\bf Tidbit of pathology:} The numeric value of an array depends on its contents:
+
+\begin{verbatim}
++[0]              // 0
++[1]              // 1
++[2]              // 2
++[[1]]            // 1
++[[[[[[[1]]]]]]]  // 1
++[1, 2]           // NaN
++[true]           // NaN
++['4']            // 4
++['0xff']         // 255
++['  0xff']       // 255
+-[]               // 0
+-[1]              // -1
+-[1, 2]           // NaN
+\end{verbatim}
+
+      Fortunately, at least in V8, numeric coercion is still well-defined when you have an array that contains itself; so this example isn't nearly as much fun as it could be:\footnote{Though
+      this could easily change if you redefine {\tt valueOf()}.}
+
+\begin{verbatim}
+var a = [];
+a.push(a);
++a                // 0
+\end{verbatim}
+    \end{quote}
+
 
 \subsection {Things that will loudly fail}
     There is a point where Javascript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
@@ -553,8 +650,35 @@ var wrapper       = function () {
 // for all x, wrapper(x) === to_be_wrapped(x)
 \end{verbatim}
 
-    However, {\tt new} has no such mechanism. You can't forward a constructor in the general case, because {\tt new} has no equivalent of {\tt apply}. (Though this isn't the whole story -- see
-    section \ref{sec:forwarding-constructors} for a \sout{way} hack to do it.)
+    However, {\tt new} has no such mechanism. You can't forward a constructor in the general case, because {\tt new} has no equivalent of {\tt apply}. (Though this isn't the whole story; see
+    the next section for a brilliant workaround.)
+
+\subsection {Why {\tt new} isn't quite so awful}
+    I recently received an e-mail from Ondrej Zara explaining that my bias against {\tt new} was ill-founded, and containing a remarkably elegant workaround for the problem I complained about
+    in the previous section. Here's his implementation verbatim:
+
+\begin{verbatim}
+var Forward = function(ctor /*, args... */) {
+  var tmp = function(){};
+  tmp.prototype = ctor.prototype;
+  var inst = new tmp();
+  var args = [];
+  for (var i=1;i<arguments.length;i++) { args.push(arguments[i]); }
+  ctor.apply(inst, args);
+  return inst;
+}
+\end{verbatim}
+
+    \noindent And the use case:
+
+\begin{verbatim}
+var Class = function(a, b, c) {}
+var instance = Forward(Class, a, b, c);
+instance instanceof Class; // true
+\end{verbatim}
+
+    At first I was very skeptical that this approach would work, but I have yet to find a case where it fails. So constructors can indeed be forwarded in Javascript, despite my previous claims
+    to the contrary.
 
 \subsection {Why you should use prototypes}
     If you need a dynamic-dispatch pattern, then prototypes are probably your best bet and you should use them rather than a roll-your-own approach. Google's V8 has a bunch of
@@ -643,31 +767,6 @@ properties          // => []
 
 \section {If You Have 20 Minutes...}
   Javascript can do almost anything that other languages can do. However, it might not be very obvious how to go about it.
-
-\subsection {Forwarding constructors}
-    \label{sec:forwarding-constructors}
-    I mentioned earlier that constructors can't be forwarded. That isn't exactly true. You can use this egregious hack (which is actually kind of beautiful in a don't-try-this-at-home sort of
-    way):\footnote{In general, anytime you run into something that's ``impossible'' in Javascript, you have a \sout{technique} hack at your disposal. The sledgehammer is {\tt eval}, which lets
-    you do anything.}
-
-\begin{verbatim}
-var ctor = ...;     // we want to wrap this
-var wrapper = function () {
-  var params = /^function\s*\(([^)]*)\)/.exec (ctor.toString());
-  if (params) {
-    var unlikely = '_' + (Math.random() << 20).toString(36);
-    eval ('var ' + unlikely + ' = ctor;');
-    var f = eval (                           // fails on IE6
-      'function (' + params[1] + ') {' +
-        'return new ' + unlikely + ' (' + params[1] + ');' +
-      '}');
-    return f.apply (this, arguments);
-  }
-};
-\end{verbatim}
-
-    Now you can say {\tt wrapper(x, y, ...)} and it will be translated into {\tt new ctor(x, y, ...)} -- and because {\tt wrapper} is just a regular function, you can call its {\tt apply}
-    method to give it an array of arguments.
 
 \subsection {Iterators for cool people}
     Because languages like Ruby showed the world just how pass\'e \verb|for| loops really are, a lot of self-respecting functional programmers don't like to use them. If you're on Firefox, you
@@ -812,7 +911,7 @@ keys (point.methods).each (function (k) {
     Now \verb|trace| (which isn't a Javascript built-in, so you'd have to define it) would be called each time any method of a \verb|point| instance was called, and it would have access to
     both the arguments and the state.
 
-\subsection {Tail calls and delimited continuations}
+\subsection {Tail calls}
     Javascript does not do tail-call optimization by default, which is a shame because some browsers have short call stacks (the shortest I'm aware of is 500 frames, which goes by especially
     quickly when you have bound functions and iterators). Luckily, encoding tail calls in Javascript is actually really simple:
 
@@ -827,9 +926,8 @@ Function.prototype.call_with_tco = function () {
 };
 \end{verbatim}
 
-    This is actually an implementation of delimited continuations, since the \verb|escape| parameter serves the purpose of the final CPS target.\footnote{If this didn't make sense, then see
-    the Wikipedia article on continuation-passing style and delimited continuations. If that doesn't help, then you should probably skip this section.} So writing a factorial function, for
-    example:
+    We can now use this definition to write a tail-call optimized factorial function:\footnote{This technique is called {\em trampolining} and doesn't constitute implementing delimited
+    continuations, as I found out later. However, it's still pretty cool.}
 
 \begin{verbatim}
 // Standard recursive definition
@@ -972,7 +1070,7 @@ Array.prototype['<<'] = function () {
 
     The only thing that's unfortunate about implementing this stuff in Javascript rather than Lisp is that Javascript bakes syntactic constructs into the grammar, so trying to introduce new
     syntactic forms such as \verb|when| isn't very convenient:
-    
+
 \begin{verbatim}
 expand_when (function () {
   when (foo) {      // compile error; { unexpected
@@ -996,7 +1094,7 @@ expand_when (function () {
 
   As a shameless plug, I also recommend reading through Divergence (\url{http://github.com/spencertipping/divergence}), a library that I wrote. It's very different from jQuery -- much more
   terse and algorithmic (and has no DOM involvement). jQuery uses a more traditional approach, whereas Divergence tends to make heavy use of closures and functional metaprogramming.
-  
+
   If you're into Lisp and metaprogramming, you might also enjoy \url{http://github.com/spencertipping/divergence.rebase} and \url{http://github.com/spencertipping/caterwaul}, two projects that
   use function serialization and \verb|eval()| to implement some of the syntactic extensions mentioned in the last section.
 
