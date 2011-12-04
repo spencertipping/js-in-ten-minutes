@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__YA+tJ0mjqwDOpG3rzM6YPmR0hssyqdZrdFFca7ef7XA');
+meta::data('document', <<'__fC7auFld1/wBlBPAgS/2X398eErnqpH6hUU+bLKaeBI');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -668,6 +668,17 @@ begin
       -[]               // 0
       -[1]              // -1
       -[1, 2]           // NaN
+      :.
+
+      The built-in numeric coercion on arrays will fail with a stack overflow error if your array is deeply nested enough. For example:
+
+      ::
+      for (var x = [], a = x, tmp, i = 0; i < 100000; ++i) {
+        a.push(tmp = []);
+        a = tmp;
+      }
+      a.push(42);       // the value we want, 100000 levels deep
+      x == 5            // stack overflow in V8
       :.
 
       Fortunately, at least in V8, numeric coercion is still well-defined when you have an array that contains itself; so this example isn't nearly as much fun as it could be:\footnote{Though
@@ -1317,7 +1328,7 @@ begin
   Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
   in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
   don't know Javascript that well.
-__YA+tJ0mjqwDOpG3rzM6YPmR0hssyqdZrdFFca7ef7XA
+__fC7auFld1/wBlBPAgS/2X398eErnqpH6hUU+bLKaeBI
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1396,9 +1407,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__fREjrRTx9jJAaFlG4ftkVGwE/6onvS0aHG6Qj88fTJQ');
-/tmp/js-in-ten-minutes.gVOLXh8GCjTSDtiKYtkXfSkW+j9LH4rGyM53G8Ljp7A/document.pdf
-__fREjrRTx9jJAaFlG4ftkVGwE/6onvS0aHG6Qj88fTJQ
+meta::data('pdf-output-file', <<'__qc3llSEP0fQbcesIqavTXDWs5yxN0KjdyCrcnq2iwI4');
+/tmp/js-in-ten-minutes.d+7QiEY0nq3jQMm4u9twZbIbnnheKkD4CN-IZFVJpB8/document.pdf
+__qc3llSEP0fQbcesIqavTXDWs5yxN0KjdyCrcnq2iwI4
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince

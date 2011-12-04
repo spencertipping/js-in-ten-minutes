@@ -454,6 +454,17 @@ Object.prototype.valueOf = function () {
 -[1, 2]           // NaN
 \end{verbatim}
 
+      The built-in numeric coercion on arrays will fail with a stack overflow error if your array is deeply nested enough. For example:
+
+\begin{verbatim}
+for (var x = [], a = x, tmp, i = 0; i < 100000; ++i) {
+  a.push(tmp = []);
+  a = tmp;
+}
+a.push(42);       // the value we want, 100000 levels deep
+x == 5            // stack overflow in V8
+\end{verbatim}
+
       Fortunately, at least in V8, numeric coercion is still well-defined when you have an array that contains itself; so this example isn't nearly as much fun as it could be:\footnote{Though
       this could easily change if you redefine {\tt valueOf()}.}
 
