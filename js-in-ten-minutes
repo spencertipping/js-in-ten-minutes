@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__fC7auFld1/wBlBPAgS/2X398eErnqpH6hUU+bLKaeBI');
+meta::data('document', <<'__qwf4X14P9Ip0lpuo/dj2Ao2U1Zq2rfTCGLPrgSTEQPA');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -580,9 +580,11 @@ begin
     And some of my favorites:
 
     ::
-    null * false + (true * false) + (true * true)     // => 1
-    true << true << true                              // => 4
-    true / null                                       // => Infinity
+    null * false + (true * false) + (true * true)       // => 1
+    true << true << true                                // => 4
+    true / null                                         // => Infinity
+    [] == []                                            // => false
+    [] == ![]                                           // => true
     :.
 
   - Numeric coercion
@@ -1328,7 +1330,7 @@ begin
   Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
   in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
   don't know Javascript that well.
-__fC7auFld1/wBlBPAgS/2X398eErnqpH6hUU+bLKaeBI
+__qwf4X14P9Ip0lpuo/dj2Ao2U1Zq2rfTCGLPrgSTEQPA
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1407,9 +1409,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__qc3llSEP0fQbcesIqavTXDWs5yxN0KjdyCrcnq2iwI4');
-/tmp/js-in-ten-minutes.d+7QiEY0nq3jQMm4u9twZbIbnnheKkD4CN-IZFVJpB8/document.pdf
-__qc3llSEP0fQbcesIqavTXDWs5yxN0KjdyCrcnq2iwI4
+meta::data('pdf-output-file', <<'__Oiot86+W90BEZi2iVxbUbA10pAo6dhwubQPjG/YIfkI');
+/tmp/js-in-ten-minutes.tM14DOJlQS580XF6IwOJBlXssj1lKa8Rl+wDZJ-gFmM/document.pdf
+__Oiot86+W90BEZi2iVxbUbA10pAo6dhwubQPjG/YIfkI
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
