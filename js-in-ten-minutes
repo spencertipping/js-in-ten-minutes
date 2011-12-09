@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__qwf4X14P9Ip0lpuo/dj2Ao2U1Zq2rfTCGLPrgSTEQPA');
+meta::data('document', <<'__Y6CGQcaJO4n3FmBNKZ8bXw6lofvLX4nFBKZ44pItSCk');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -692,7 +692,6 @@ begin
       +a                // 0
       :.
     \end{quote}
-
 
   - Things that will loudly fail
     There is a point where Javascript will complain. If you call a non-function, ask for a property of \verb|null| or \verb|undefined|, or refer to a global variable that doesn't
@@ -1330,7 +1329,7 @@ begin
   Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
   in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
   don't know Javascript that well.
-__qwf4X14P9Ip0lpuo/dj2Ao2U1Zq2rfTCGLPrgSTEQPA
+__Y6CGQcaJO4n3FmBNKZ8bXw6lofvLX4nFBKZ44pItSCk
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1409,9 +1408,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__Oiot86+W90BEZi2iVxbUbA10pAo6dhwubQPjG/YIfkI');
-/tmp/js-in-ten-minutes.tM14DOJlQS580XF6IwOJBlXssj1lKa8Rl+wDZJ-gFmM/document.pdf
-__Oiot86+W90BEZi2iVxbUbA10pAo6dhwubQPjG/YIfkI
+meta::data('pdf-output-file', <<'__Tx6YkX3OWJl/t2ZQgd3iKjx6KdF2Yq36J80gfukVXCk');
+/tmp/js-in-ten-minutes.MueIv8lJDa6SpJBBaO0jObOdgAQqXU8nEUDXcFNceCA/document.pdf
+__Tx6YkX3OWJl/t2ZQgd3iKjx6KdF2Yq36J80gfukVXCk
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
