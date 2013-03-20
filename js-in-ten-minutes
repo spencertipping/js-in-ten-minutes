@@ -217,7 +217,7 @@ meta::data('default-action', <<'__zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc');
 shell
 __zmNcTqv/Xk9W26j7HjnKI1UwqitrGFM+7xrzhiAWxXc
 
-meta::data('document', <<'__Y6CGQcaJO4n3FmBNKZ8bXw6lofvLX4nFBKZ44pItSCk');
+meta::data('document', <<'__YGCi/syAMnXXbny13zipjKpx0WLvRajMexm2ilDCLe4');
 = Javascript in Ten Minutes
 a Spencer Tipping
 begin
@@ -494,7 +494,7 @@ begin
 
     ::
     null  == undefined
-    null  == 0
+    false == 0
     false == ''
     ''    == 0
     true  == 1
@@ -1329,7 +1329,7 @@ begin
   Also, I recently found a site called \url{http://wtfjs.com} that seems to be dedicated to exposing all of Javascript's edge-case pathologies. It's quite a fun and enlightening read. A more
   in-depth look at the good, bad, and ugly parts of Javascript is \url{http://perfectionkills.com}; this site is written by one of the PrototypeJS developers and has convinced me that I really
   don't know Javascript that well.
-__Y6CGQcaJO4n3FmBNKZ8bXw6lofvLX4nFBKZ44pItSCk
+__YGCi/syAMnXXbny13zipjKpx0WLvRajMexm2ilDCLe4
 
 meta::data('header', <<'__bgoNmrNdosmFP/K+Dbg3jFkiPFpZJ3NadO5WCeO7tgY');
 \documentclass{article}
@@ -1408,9 +1408,9 @@ meta::data('output-dir', <<'__6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ');
 /tmp
 __6WcazSRIScVxZ8ZY+i+Wl1IEj3qxhKPc9cRstNVq4SQ
 
-meta::data('pdf-output-file', <<'__Tx6YkX3OWJl/t2ZQgd3iKjx6KdF2Yq36J80gfukVXCk');
-/tmp/js-in-ten-minutes.MueIv8lJDa6SpJBBaO0jObOdgAQqXU8nEUDXcFNceCA/document.pdf
-__Tx6YkX3OWJl/t2ZQgd3iKjx6KdF2Yq36J80gfukVXCk
+meta::data('pdf-output-file', <<'__Fj+Eu1bcia5PjxWNF+/YZ0HliPDR62rUk90q9TJgMIk');
+/tmp/js-in-ten-minutes.0CsA-kpJTG34HiFngeJQcS+TR2mcbflcJWdxL+P7BV8/document.pdf
+__Fj+Eu1bcia5PjxWNF+/YZ0HliPDR62rUk90q9TJgMIk
 
 meta::data('pdf-reader', <<'__BlFO10Obn0hAHVxLShDpKtlpv0BTeJ7iqm1v7vjCM+A');
 evince
